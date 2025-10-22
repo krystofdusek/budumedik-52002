@@ -1,10 +1,178 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, FileText, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Brain, FileText, Sparkles, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TestGenerators() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [faculties, setFaculties] = useState<any[]>([]);
+  
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedFaculty, setSelectedFaculty] = useState<string>("");
+  const [questionCount, setQuestionCount] = useState<number>(10);
+
+  useEffect(() => {
+    loadFilters();
+  }, []);
+
+  useEffect(() => {
+    if (selectedSubject) {
+      loadCategories(selectedSubject);
+    }
+  }, [selectedSubject]);
+
+  const loadFilters = async () => {
+    const { data: subjectsData } = await supabase.from('subjects').select('*');
+    const { data: facultiesData } = await supabase.from('faculties').select('*');
+    
+    setSubjects(subjectsData || []);
+    setFaculties(facultiesData || []);
+  };
+
+  const loadCategories = async (subjectId: string) => {
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('subject_id', subjectId);
+    
+    setCategories(data || []);
+  };
+
+  const createClassicTest = async () => {
+    if (!selectedSubject || !selectedFaculty) {
+      toast({
+        title: "Chybí informace",
+        description: "Vyberte prosím předmět a fakultu",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('questions')
+        .select('*')
+        .eq('subject_id', selectedSubject)
+        .eq('faculty_id', selectedFaculty);
+
+      if (selectedCategory) {
+        query = query.eq('category_id', selectedCategory);
+      }
+
+      const { data: questions, error } = await query.limit(questionCount);
+
+      if (error) throw error;
+
+      if (!questions || questions.length === 0) {
+        toast({
+          title: "Žádné otázky",
+          description: "Pro vybrané filtry nebyly nalezeny žádné otázky",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Shuffle questions
+      const shuffled = questions.sort(() => Math.random() - 0.5);
+      
+      navigate('/test', { 
+        state: { 
+          questions: shuffled.slice(0, questionCount),
+          testType: 'classic',
+          filters: { selectedSubject, selectedCategory, selectedFaculty }
+        } 
+      });
+    } catch (error) {
+      console.error('Error creating test:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se vytvořit test",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createAITest = async () => {
+    if (!selectedSubject || !selectedFaculty) {
+      toast({
+        title: "Chybí informace",
+        description: "Vyberte prosím předmět a fakultu",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-ai-questions', {
+        body: {
+          subjectId: selectedSubject,
+          categoryId: selectedCategory || null,
+          facultyId: selectedFaculty,
+          count: questionCount
+        }
+      });
+
+      if (error) throw error;
+
+      if (!data?.questions || data.questions.length === 0) {
+        toast({
+          title: "Chyba generování",
+          description: "Nepodařilo se vygenerovat otázky",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      navigate('/test', { 
+        state: { 
+          questions: data.questions,
+          testType: 'ai',
+          filters: { selectedSubject, selectedCategory, selectedFaculty }
+        } 
+      });
+    } catch (error: any) {
+      console.error('Error creating AI test:', error);
+      
+      if (error.message?.includes('429')) {
+        toast({
+          title: "Příliš mnoho požadavků",
+          description: "Zkuste to prosím za chvíli",
+          variant: "destructive"
+        });
+      } else if (error.message?.includes('402')) {
+        toast({
+          title: "Nedostatek kreditů",
+          description: "Kontaktujte administrátora",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Chyba",
+          description: "Nepodařilo se vytvořit AI test",
+          variant: "destructive"
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -17,6 +185,97 @@ export default function TestGenerators() {
                 Vyberte typ testu, který chcete absolvovat
               </p>
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Filtry pro testy</CardTitle>
+                <CardDescription>
+                  Přizpůsobte si test podle svých potřeb
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Předmět *
+                    </label>
+                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vyberte předmět" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subjects.map(subject => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Kategorie
+                    </label>
+                    <Select 
+                      value={selectedCategory} 
+                      onValueChange={setSelectedCategory}
+                      disabled={!selectedSubject}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vyberte kategorii" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Všechny kategorie</SelectItem>
+                        {categories.map(category => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Fakulta *
+                    </label>
+                    <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vyberte fakultu" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {faculties.map(faculty => (
+                          <SelectItem key={faculty.id} value={faculty.id}>
+                            {faculty.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Počet otázek
+                    </label>
+                    <Select 
+                      value={questionCount.toString()} 
+                      onValueChange={(val) => setQuestionCount(parseInt(val))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10 otázek</SelectItem>
+                        <SelectItem value="20">20 otázek</SelectItem>
+                        <SelectItem value="30">30 otázek</SelectItem>
+                        <SelectItem value="50">50 otázek</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="hover:shadow-lg transition-shadow">
@@ -36,8 +295,19 @@ export default function TestGenerators() {
                     <li>• Specifická fakulta</li>
                     <li>• Otázky z minulých let</li>
                   </ul>
-                  <Button className="w-full">
-                    Vytvořit klasický test
+                  <Button 
+                    className="w-full" 
+                    onClick={createClassicTest}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Vytváření...
+                      </>
+                    ) : (
+                      'Vytvořit klasický test'
+                    )}
                   </Button>
                 </CardContent>
               </Card>
@@ -64,73 +334,29 @@ export default function TestGenerators() {
                     <li>• Adaptivní obtížnost</li>
                     <li>• Skutečný formát zkoušky</li>
                   </ul>
-                  <Button className="w-full">
-                    <Brain className="mr-2 h-4 w-4" />
-                    Vytvořit AI test
+                  <Button 
+                    className="w-full"
+                    onClick={createAITest}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generování...
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="mr-2 h-4 w-4" />
+                        Vytvořit AI test
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Filtry pro testy</CardTitle>
-                <CardDescription>
-                  Přizpůsobte si test podle svých potřeb
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Předmět
-                    </label>
-                    <select className="w-full border rounded-md p-2 bg-background">
-                      <option>Všechny předměty</option>
-                      <option>Fyzika</option>
-                      <option>Chemie</option>
-                      <option>Biologie</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Fakulta
-                    </label>
-                    <select className="w-full border rounded-md p-2 bg-background">
-                      <option>Všechny fakulty</option>
-                      <option>2LF</option>
-                      <option>LF Brno</option>
-                      <option>3LF</option>
-                      <option>LFHK</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Počet otázek
-                    </label>
-                    <select className="w-full border rounded-md p-2 bg-background">
-                      <option>10 otázek</option>
-                      <option>20 otázek</option>
-                      <option>30 otázek</option>
-                      <option>50 otázek</option>
-                    </select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </main>
       </div>
     </SidebarProvider>
-  );
-}
-
-function Badge({ children, variant = "default", className = "" }: { children: React.ReactNode; variant?: string; className?: string }) {
-  return (
-    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${className}`}>
-      {children}
-    </span>
   );
 }
