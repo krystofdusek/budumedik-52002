@@ -68,7 +68,7 @@ export default function TestGenerators() {
         .eq('subject_id', selectedSubject)
         .eq('faculty_id', selectedFaculty);
 
-      if (selectedCategory) {
+      if (selectedCategory && selectedCategory !== 'all') {
         query = query.eq('category_id', selectedCategory);
       }
 
@@ -122,7 +122,7 @@ export default function TestGenerators() {
       const { data, error } = await supabase.functions.invoke('generate-ai-questions', {
         body: {
           subjectId: selectedSubject,
-          categoryId: selectedCategory || null,
+          categoryId: selectedCategory && selectedCategory !== 'all' ? selectedCategory : null,
           facultyId: selectedFaculty,
           count: questionCount
         }
@@ -226,7 +226,7 @@ export default function TestGenerators() {
                         <SelectValue placeholder="Vyberte kategorii" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Všechny kategorie</SelectItem>
+                        <SelectItem value="all">Všechny kategorie</SelectItem>
                         {categories.map(category => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
