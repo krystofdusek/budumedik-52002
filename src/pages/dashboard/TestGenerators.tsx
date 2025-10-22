@@ -18,6 +18,7 @@ export default function TestGenerators() {
   const [categories, setCategories] = useState<any[]>([]);
   const [faculties, setFaculties] = useState<any[]>([]);
   
+  const [selectedTestType, setSelectedTestType] = useState<'classic' | 'ai' | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
@@ -173,6 +174,143 @@ export default function TestGenerators() {
     }
   };
 
+  if (selectedTestType) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar />
+          <main className="flex-1 p-8 bg-muted/50">
+            <div className="max-w-4xl mx-auto space-y-8">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedTestType(null)}
+                >
+                  ← Zpět
+                </Button>
+                <div>
+                  <h1 className="text-4xl font-bold mb-2">
+                    {selectedTestType === 'classic' ? 'Klasický test' : 'AI Personalizovaný test'}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Vyplňte parametry testu
+                  </p>
+                </div>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Nastavení testu</CardTitle>
+                  <CardDescription>
+                    Vyberte předmět, kategorii a fakultu
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Předmět *
+                      </label>
+                      <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Vyberte předmět" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subjects.map(subject => (
+                            <SelectItem key={subject.id} value={subject.id}>
+                              {subject.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Kategorie
+                      </label>
+                      <Select 
+                        value={selectedCategory} 
+                        onValueChange={setSelectedCategory}
+                        disabled={!selectedSubject}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Vyberte kategorii" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Všechny kategorie</SelectItem>
+                          {categories.map(category => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Fakulta *
+                      </label>
+                      <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Vyberte fakultu" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {faculties.map(faculty => (
+                            <SelectItem key={faculty.id} value={faculty.id}>
+                              {faculty.name} ({faculty.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Počet otázek
+                      </label>
+                      <Select 
+                        value={questionCount.toString()} 
+                        onValueChange={(val) => setQuestionCount(parseInt(val))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10 otázek</SelectItem>
+                          <SelectItem value="20">20 otázek</SelectItem>
+                          <SelectItem value="30">30 otázek</SelectItem>
+                          <SelectItem value="50">50 otázek</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full"
+                    size="lg"
+                    onClick={selectedTestType === 'classic' ? createClassicTest : createAITest}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {selectedTestType === 'classic' ? 'Vytváření...' : 'Generování...'}
+                      </>
+                    ) : (
+                      selectedTestType === 'classic' ? 'Vytvořit test' : 'Vygenerovat test'
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -186,99 +324,8 @@ export default function TestGenerators() {
               </p>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Filtry pro testy</CardTitle>
-                <CardDescription>
-                  Přizpůsobte si test podle svých potřeb
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Předmět *
-                    </label>
-                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vyberte předmět" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjects.map(subject => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Kategorie
-                    </label>
-                    <Select 
-                      value={selectedCategory} 
-                      onValueChange={setSelectedCategory}
-                      disabled={!selectedSubject}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vyberte kategorii" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Všechny kategorie</SelectItem>
-                        {categories.map(category => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Fakulta *
-                    </label>
-                    <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vyberte fakultu" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {faculties.map(faculty => (
-                          <SelectItem key={faculty.id} value={faculty.id}>
-                            {faculty.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Počet otázek
-                    </label>
-                    <Select 
-                      value={questionCount.toString()} 
-                      onValueChange={(val) => setQuestionCount(parseInt(val))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10">10 otázek</SelectItem>
-                        <SelectItem value="20">20 otázek</SelectItem>
-                        <SelectItem value="30">30 otázek</SelectItem>
-                        <SelectItem value="50">50 otázek</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             <div className="grid md:grid-cols-2 gap-6">
-              <Card className="hover:shadow-lg transition-shadow">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedTestType('classic')}>
                 <CardHeader>
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                     <FileText className="h-6 w-6 text-primary" />
@@ -295,24 +342,13 @@ export default function TestGenerators() {
                     <li>• Specifická fakulta</li>
                     <li>• Otázky z minulých let</li>
                   </ul>
-                  <Button 
-                    className="w-full" 
-                    onClick={createClassicTest}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Vytváření...
-                      </>
-                    ) : (
-                      'Vytvořit klasický test'
-                    )}
+                  <Button className="w-full">
+                    Vybrat klasický test
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="hover:shadow-lg transition-shadow border-primary">
+              <Card className="hover:shadow-lg transition-shadow border-primary cursor-pointer" onClick={() => setSelectedTestType('ai')}>
                 <CardHeader>
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                     <Sparkles className="h-6 w-6 text-primary" />
@@ -334,22 +370,9 @@ export default function TestGenerators() {
                     <li>• Adaptivní obtížnost</li>
                     <li>• Skutečný formát zkoušky</li>
                   </ul>
-                  <Button 
-                    className="w-full"
-                    onClick={createAITest}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generování...
-                      </>
-                    ) : (
-                      <>
-                        <Brain className="mr-2 h-4 w-4" />
-                        Vytvořit AI test
-                      </>
-                    )}
+                  <Button className="w-full">
+                    <Brain className="mr-2 h-4 w-4" />
+                    Vybrat AI test
                   </Button>
                 </CardContent>
               </Card>
