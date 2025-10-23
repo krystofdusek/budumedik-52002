@@ -41,33 +41,65 @@ serve(async (req) => {
       `)
       .eq('user_id', user.id);
 
-    // Fetch subject, category, and faculty details
-    const { data: subject } = await supabase
-      .from('subjects')
-      .select('name, type')
-      .eq('id', subjectId)
-      .single();
-
-    const { data: category } = await supabase
-      .from('categories')
-      .select('name')
-      .eq('id', categoryId)
-      .single();
-
+    // Fetch faculty details (required)
     const { data: faculty } = await supabase
       .from('faculties')
       .select('name, code, has_option_e, allows_multiple_correct')
       .eq('id', facultyId)
       .single();
 
+    if (!faculty) {
+      throw new Error('Faculty not found');
+    }
+
+    // Fetch all subjects if no specific subject selected
+    let subjects: any[] = [];
+    if (!subjectId) {
+      const { data: allSubjects } = await supabase
+        .from('subjects')
+        .select('id, name, type');
+      subjects = allSubjects || [];
+    } else {
+      const { data: subject } = await supabase
+        .from('subjects')
+        .select('id, name, type')
+        .eq('id', subjectId)
+        .single();
+      if (subject) subjects = [subject];
+    }
+
+    // Fetch all categories if no specific category selected (but subject is selected)
+    let categories: any[] = [];
+    if (subjectId && !categoryId) {
+      const { data: allCategories } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('subject_id', subjectId);
+      categories = allCategories || [];
+    } else if (categoryId) {
+      const { data: category } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('id', categoryId)
+        .single();
+      if (category) categories = [category];
+    }
+
     // Fetch sample questions from database for context
-    const { data: sampleQuestions } = await supabase
+    let sampleQuestionsQuery = supabase
       .from('questions')
       .select('*')
-      .eq('subject_id', subjectId)
-      .eq('category_id', categoryId)
-      .eq('faculty_id', facultyId)
-      .limit(3);
+      .eq('faculty_id', facultyId);
+
+    if (subjectId) {
+      sampleQuestionsQuery = sampleQuestionsQuery.eq('subject_id', subjectId);
+    }
+    
+    if (categoryId) {
+      sampleQuestionsQuery = sampleQuestionsQuery.eq('category_id', categoryId);
+    }
+
+    const { data: sampleQuestions } = await sampleQuestionsQuery.limit(3);
 
     // Calculate weak areas
     const categoryStats: Record<string, { correct: number; total: number }> = {};
@@ -85,19 +117,36 @@ serve(async (req) => {
       .map(([catId]) => catId);
 
     // Create AI prompt
+    let subjectInfo = '';
+    if (subjects.length === 1) {
+      subjectInfo = `PŘEDMĚT: ${subjects[0].name} (typ: ${subjects[0].type})`;
+    } else if (subjects.length > 1) {
+      subjectInfo = `PŘEDMĚTY: Rovnoměrně distribuuj otázky mezi tyto předměty:\n${subjects.map(s => `- ${s.name} (${s.type})`).join('\n')}`;
+    }
+
+    let categoryInfo = '';
+    if (categories.length === 1) {
+      categoryInfo = `KATEGORIE: ${categories[0].name}`;
+    } else if (categories.length > 1) {
+      categoryInfo = `KATEGORIE: Rovnoměrně distribuuj otázky mezi tyto kategorie:\n${categories.map(c => `- ${c.name}`).join('\n')}`;
+    }
+
     const systemPrompt = `Jsi expert na tvorbu přijímacích otázek na lékařské fakulty v České republice. 
 Tvým úkolem je vytvořit autentické a náročné otázky, které odpovídají reálným přijímacím zkouškám.
 
-SPECIFIKACE FAKULTY ${faculty?.code}:
-- Název: ${faculty?.name}
-- Možnost E: ${faculty?.has_option_e ? 'ANO' : 'NE'}
-- Více správných odpovědí: ${faculty?.allows_multiple_correct ? 'ANO' : 'NE'}
+SPECIFIKACE FAKULTY ${faculty.code}:
+- Název: ${faculty.name}
+- Možnost E: ${faculty.has_option_e ? 'ANO' : 'NE'}
+- Více správných odpovědí: ${faculty.allows_multiple_correct ? 'ANO' : 'NE'}
 
-PŘEDMĚT: ${subject?.name} (typ: ${subject?.type})
-KATEGORIE: ${category?.name}
+${subjectInfo}
+${categoryInfo}
 
-${subject?.name === 'Fyzika' && (faculty?.code === '3LF' || faculty?.code === 'LFHK') ? 
+${subjects.some(s => s.name === 'Fyzika') && (faculty.code === '3LF' || faculty.code === 'LFHK') ? 
   'DŮLEŽITÉ: Pro tuto fakultu jsou fyzikální otázky velmi náročné a obsahují složité výpočty a příklady. Zaměř se na matematicky náročné úlohy.' : ''}
+
+${!subjectId && !categoryId ? 
+  'DŮLEŽITÉ: Vytvoř rovnoměrnou distribuci otázek ze VŠECH dostupných předmětů a kategorií. Zajisti různorodost a pokrytí všech oblastí.' : ''}
 
 ${sampleQuestions && sampleQuestions.length > 0 ? 
   `PŘÍKLADY EXISTUJÍCÍCH OTÁZEK PRO INSPIRACI:\n${sampleQuestions.map((q: any, i: number) => 
@@ -111,6 +160,8 @@ Vytvoř ${count} originálních otázek. Každá otázka musí být:
 2. S jednou nebo více správnými odpověďmi (podle specifikace fakulty)
 3. S vysvětlením správné odpovědi
 4. Vhodné obtížnosti pro medicínské studium
+${!subjectId ? '5. Rovnoměrně distribuovaná mezi předměty' : ''}
+${!categoryId && subjectId ? '6. Rovnoměrně distribuovaná mezi kategorie' : ''}
 
 Pro fyziku na 3LF/LFHK vytvárej hlavně složité příklady s výpočty.`;
 
@@ -124,7 +175,7 @@ Pro fyziku na 3LF/LFHK vytvárej hlavně složité příklady s výpočty.`;
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Vytvoř ${count} otázek ve formátu JSON array s těmito poli: question_text, option_a, option_b, option_c, option_d${faculty?.has_option_e ? ', option_e' : ''}, correct_answers (array), explanation` }
+          { role: 'user', content: `Vytvoř ${count} otázek ve formátu JSON array s těmito poli: question_text, option_a, option_b, option_c, option_d${faculty.has_option_e ? ', option_e' : ''}, correct_answers (array), explanation` }
         ],
         tools: [
           {

@@ -4,9 +4,78 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/components/ThemeProvider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function Settings() {
   const { theme } = useTheme();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [faculties, setFaculties] = useState<any[]>([]);
+  const [selectedFaculty, setSelectedFaculty] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    setUserId(user.id);
+
+    const { data: facultiesData } = await supabase.from('faculties').select('*');
+    setFaculties(facultiesData || []);
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('favorite_faculty_id')
+      .eq('id', user.id)
+      .single();
+    
+    if (profile?.favorite_faculty_id) {
+      setSelectedFaculty(profile.favorite_faculty_id);
+    }
+  };
+
+  const saveFavoriteFaculty = async () => {
+    if (!selectedFaculty) {
+      toast({
+        title: "Chyba",
+        description: "Vyberte prosím fakultu",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ favorite_faculty_id: selectedFaculty })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Uloženo",
+        description: "Oblíbená fakulta byla uložena"
+      });
+    } catch (error) {
+      console.error('Error saving faculty:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se uložit fakultu",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -20,6 +89,46 @@ export default function Settings() {
                 Upravte si aplikaci podle svých preferencí
               </p>
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Oblíbená fakulta</CardTitle>
+                <CardDescription>
+                  Nastavte si oblíbenou fakultu pro personalizované testy a porovnání
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Vyberte fakultu
+                    </label>
+                    <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vyberte fakultu" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {faculties.map(faculty => (
+                          <SelectItem key={faculty.id} value={faculty.id}>
+                            {faculty.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={saveFavoriteFaculty} disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Ukládání...
+                      </>
+                    ) : (
+                      'Uložit'
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>

@@ -74,22 +74,33 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          favorite_faculty_id: string | null
           id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           email: string
+          favorite_faculty_id?: string | null
           id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string
+          favorite_faculty_id?: string | null
           id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_favorite_faculty_id_fkey"
+            columns: ["favorite_faculty_id"]
+            isOneToOne: false
+            referencedRelation: "faculties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       question_reports: {
         Row: {
@@ -379,15 +390,53 @@ export type Database = {
           },
         ]
       }
+      user_statistics: {
+        Row: {
+          activity_score: number
+          created_at: string
+          id: string
+          total_correct_answers: number
+          total_questions_answered: number
+          total_tests_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_score?: number
+          created_at?: string
+          id?: string
+          total_correct_answers?: number
+          total_questions_answered?: number
+          total_tests_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_score?: number
+          created_at?: string
+          id?: string
+          total_correct_answers?: number
+          total_questions_answered?: number
+          total_tests_completed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_statistics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"

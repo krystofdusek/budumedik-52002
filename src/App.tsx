@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import TestGenerators from "./pages/dashboard/TestGenerators";
 import Progress from "./pages/dashboard/Progress";
 import Settings from "./pages/dashboard/Settings";
+import Leaderboard from "./pages/dashboard/Leaderboard";
 import Test from "./pages/Test";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminReported from "./pages/admin/AdminReported";
@@ -31,9 +32,10 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/tests" element={<TestGenerators />} />
-          <Route path="/dashboard/progress" element={<Progress />} />
-          <Route path="/dashboard/settings" element={<Settings />} />
-          <Route path="/test" element={<Test />} />
+            <Route path="/dashboard/progress" element={<Progress />} />
+            <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
+            <Route path="/dashboard/settings" element={<Settings />} />
+            <Route path="/test" element={<Test />} />
             <Route path="/admin/questions" element={<AdminQuestions />} />
             <Route path="/admin/reported" element={<AdminReported />} />
             <Route path="*" element={<NotFound />} />

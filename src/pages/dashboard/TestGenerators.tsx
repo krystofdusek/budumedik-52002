@@ -23,6 +23,7 @@ export default function TestGenerators() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
   const [questionCount, setQuestionCount] = useState<number>(10);
+  const [favoriteFaculty, setFavoriteFaculty] = useState<string>("");
 
   useEffect(() => {
     loadFilters();
@@ -40,6 +41,21 @@ export default function TestGenerators() {
     
     setSubjects(subjectsData || []);
     setFaculties(facultiesData || []);
+
+    // Load user's favorite faculty
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('favorite_faculty_id')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile?.favorite_faculty_id) {
+        setFavoriteFaculty(profile.favorite_faculty_id);
+        setSelectedFaculty(profile.favorite_faculty_id);
+      }
+    }
   };
 
   const loadCategories = async (subjectId: string) => {
@@ -109,10 +125,10 @@ export default function TestGenerators() {
   };
 
   const createAITest = async () => {
-    if (!selectedSubject || !selectedFaculty) {
+    if (!favoriteFaculty) {
       toast({
-        title: "Chybí informace",
-        description: "Vyberte prosím předmět a fakultu",
+        title: "Chybí oblíbená fakulta",
+        description: "Nastavte si prosím oblíbenou fakultu v nastavení",
         variant: "destructive"
       });
       return;
@@ -122,9 +138,9 @@ export default function TestGenerators() {
     try {
       const { data, error } = await supabase.functions.invoke('generate-ai-questions', {
         body: {
-          subjectId: selectedSubject,
+          subjectId: selectedSubject || null,
           categoryId: selectedCategory && selectedCategory !== 'all' ? selectedCategory : null,
-          facultyId: selectedFaculty,
+          facultyId: favoriteFaculty,
           count: questionCount
         }
       });
@@ -277,15 +293,24 @@ export default function TestGenerators() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
+                  {selectedTestType === 'ai' && !favoriteFaculty && (
+                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                      <p className="text-sm text-destructive">
+                        Pro AI personalizované testy je nutné nastavit oblíbenou fakultu v nastavení
+                      </p>
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-sm font-medium mb-2 block">
-                      Předmět *
+                      Předmět {selectedTestType === 'classic' && '*'}
                     </label>
                     <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Vyberte předmět" />
+                        <SelectValue placeholder={selectedTestType === 'ai' ? "Všechny předměty (volitelné)" : "Vyberte předmět"} />
                       </SelectTrigger>
                       <SelectContent>
+                        {selectedTestType === 'ai' && <SelectItem value="all">Všechny předměty</SelectItem>}
                         {subjects.map(subject => (
                           <SelectItem key={subject.id} value={subject.id}>
                             {subject.name}
@@ -302,10 +327,10 @@ export default function TestGenerators() {
                     <Select 
                       value={selectedCategory} 
                       onValueChange={setSelectedCategory}
-                      disabled={!selectedSubject}
+                      disabled={!selectedSubject || selectedSubject === 'all'}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Vyberte kategorii (volitelné)" />
+                        <SelectValue placeholder="Všechny kategorie (volitelné)" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Všechny kategorie</SelectItem>
@@ -318,23 +343,25 @@ export default function TestGenerators() {
                     </Select>
                   </div>
                   
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Fakulta *
-                    </label>
-                    <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vyberte fakultu" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {faculties.map(faculty => (
-                          <SelectItem key={faculty.id} value={faculty.id}>
-                            {faculty.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {selectedTestType === 'classic' && (
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Fakulta *
+                      </label>
+                      <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Vyberte fakultu" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {faculties.map(faculty => (
+                            <SelectItem key={faculty.id} value={faculty.id}>
+                              {faculty.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   
                   <div>
                     <label className="text-sm font-medium mb-2 block">
@@ -360,7 +387,7 @@ export default function TestGenerators() {
                 <Button 
                   className="w-full" 
                   onClick={selectedTestType === 'classic' ? createClassicTest : createAITest}
-                  disabled={loading || !selectedSubject || !selectedFaculty}
+                  disabled={loading || (selectedTestType === 'classic' && (!selectedSubject || !selectedFaculty)) || (selectedTestType === 'ai' && !favoriteFaculty)}
                 >
                   {loading ? (
                     <>
