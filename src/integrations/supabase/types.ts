@@ -440,7 +440,15 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      faculty_type: "2LF" | "LF_BRNO" | "3LF" | "LFHK"
+      faculty_type:
+        | "2LF"
+        | "LF_BRNO"
+        | "3LF"
+        | "LFHK"
+        | "1LF"
+        | "LFPLZEN"
+        | "LFOL"
+        | "LFOSTRAVA"
       subject_type: "PHYSICS" | "CHEMISTRY" | "BIOLOGY"
     }
     CompositeTypes: {
@@ -570,7 +578,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      faculty_type: ["2LF", "LF_BRNO", "3LF", "LFHK"],
+      faculty_type: [
+        "2LF",
+        "LF_BRNO",
+        "3LF",
+        "LFHK",
+        "1LF",
+        "LFPLZEN",
+        "LFOL",
+        "LFOSTRAVA",
+      ],
       subject_type: ["PHYSICS", "CHEMISTRY", "BIOLOGY"],
     },
   },

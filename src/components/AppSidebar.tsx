@@ -14,7 +14,7 @@ import {
 import { ThemeToggle } from "./ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -45,9 +45,12 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   return (
     <Sidebar className="border-r border-border">
       <SidebarHeader className="border-b border-border p-4">
-        <div className="flex items-center gap-2 font-bold text-lg">
-          <GraduationCap className="h-5 w-5 text-primary" />
-          MedPrep
+        <div className="flex items-center justify-center">
+          <img 
+            src={logo} 
+            alt="Logo" 
+            className="h-12 w-auto dark:invert" 
+          />
         </div>
       </SidebarHeader>
 

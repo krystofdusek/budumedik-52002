@@ -2,8 +2,39 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, FileText, TrendingUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id || null);
+    });
+  }, []);
+
+  const { data: statistics } = useQuery({
+    queryKey: ["user-statistics", userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from("user_statistics")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
+
+  const successRate = statistics && statistics.total_questions_answered > 0
+    ? Math.round((statistics.total_correct_answers / statistics.total_questions_answered) * 100)
+    : 0;
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -21,7 +52,9 @@ export default function Dashboard() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl">24</CardTitle>
+                    <CardTitle className="text-2xl">
+                      {statistics?.total_tests_completed || 0}
+                    </CardTitle>
                     <Brain className="h-8 w-8 text-primary" />
                   </div>
                   <CardDescription>Dokončené testy</CardDescription>
@@ -31,8 +64,8 @@ export default function Dashboard() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl">87%</CardTitle>
-                    <TrendingUp className="h-8 w-8 text-accent" />
+                    <CardTitle className="text-2xl">{successRate}%</CardTitle>
+                    <TrendingUp className="h-8 w-8 text-primary" />
                   </div>
                   <CardDescription>Průměrná úspěšnost</CardDescription>
                 </CardHeader>
@@ -41,7 +74,9 @@ export default function Dashboard() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl">342</CardTitle>
+                    <CardTitle className="text-2xl">
+                      {statistics?.total_questions_answered || 0}
+                    </CardTitle>
                     <FileText className="h-8 w-8 text-primary" />
                   </div>
                   <CardDescription>Zodpovězené otázky</CardDescription>

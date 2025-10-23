@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Target, TrendingUp, Zap } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const features = [
   {
@@ -38,6 +39,13 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-hero opacity-10" />
           <div className="container relative z-10">
             <div className="max-w-3xl mx-auto text-center space-y-8">
+              <div className="flex justify-center mb-8">
+                <img 
+                  src={logo} 
+                  alt="Logo" 
+                  className="h-24 w-auto dark:invert" 
+                />
+              </div>
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
                 Připravte se na{" "}
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
@@ -69,7 +77,7 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Proč si vybrat MedPrep?
+                Proč si vybrat naši platformu?
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 Využijte nejmodernější technologie pro efektivní přípravu
@@ -105,7 +113,7 @@ export default function Home() {
                   Připraveni začít?
                 </CardTitle>
                 <CardDescription className="text-lg text-primary-foreground/90 max-w-2xl mx-auto">
-                  Připojte se k tisícům studentů, kteří už úspěšně využívají MedPrep
+                  Připojte se k tisícům studentů, kteří už úspěšně používají naši platformu
                 </CardDescription>
                 <div className="pt-4">
                   <Link to="/auth">
@@ -123,7 +131,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container text-center text-muted-foreground">
-          <p>© 2025 MedPrep. Všechna práva vyhrazena.</p>
+          <p>© 2025. Všechna práva vyhrazena.</p>
         </div>
       </footer>
     </div>

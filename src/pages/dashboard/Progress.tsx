@@ -236,7 +236,7 @@ export default function Progress() {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-2xl">{stats.successRate}%</CardTitle>
-                        <TrendingUp className="h-8 w-8 text-accent" />
+                        <TrendingUp className="h-8 w-8 text-primary" />
                       </div>
                       <CardDescription>Celková úspěšnost</CardDescription>
                     </CardHeader>
