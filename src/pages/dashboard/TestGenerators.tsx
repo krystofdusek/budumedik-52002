@@ -9,64 +9,61 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Brain, FileText, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 export default function TestGenerators() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [loading, setLoading] = useState(false);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [faculties, setFaculties] = useState<any[]>([]);
-  
   const [selectedTestType, setSelectedTestType] = useState<'classic' | 'ai' | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [favoriteFaculty, setFavoriteFaculty] = useState<string>("");
-
   useEffect(() => {
     loadFilters();
   }, []);
-
   useEffect(() => {
     if (selectedSubject) {
       loadCategories(selectedSubject);
     }
   }, [selectedSubject]);
-
   const loadFilters = async () => {
-    const { data: subjectsData } = await supabase.from('subjects').select('*');
-    const { data: facultiesData } = await supabase.from('faculties').select('*');
-    
+    const {
+      data: subjectsData
+    } = await supabase.from('subjects').select('*');
+    const {
+      data: facultiesData
+    } = await supabase.from('faculties').select('*');
     setSubjects(subjectsData || []);
     setFaculties(facultiesData || []);
 
     // Load user's favorite faculty
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('favorite_faculty_id')
-        .eq('id', user.id)
-        .single();
-      
+      const {
+        data: profile
+      } = await supabase.from('profiles').select('favorite_faculty_id').eq('id', user.id).single();
       if (profile?.favorite_faculty_id) {
         setFavoriteFaculty(profile.favorite_faculty_id);
         setSelectedFaculty(profile.favorite_faculty_id);
       }
     }
   };
-
   const loadCategories = async (subjectId: string) => {
-    const { data } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('subject_id', subjectId);
-    
+    const {
+      data
+    } = await supabase.from('categories').select('*').eq('subject_id', subjectId);
     setCategories(data || []);
   };
-
   const createClassicTest = async () => {
     if (!selectedSubject || !selectedFaculty) {
       toast({
@@ -76,23 +73,17 @@ export default function TestGenerators() {
       });
       return;
     }
-
     setLoading(true);
     try {
-      let query = supabase
-        .from('questions')
-        .select('*')
-        .eq('subject_id', selectedSubject)
-        .eq('faculty_id', selectedFaculty);
-
+      let query = supabase.from('questions').select('*').eq('subject_id', selectedSubject).eq('faculty_id', selectedFaculty);
       if (selectedCategory && selectedCategory !== 'all') {
         query = query.eq('category_id', selectedCategory);
       }
-
-      const { data: questions, error } = await query.limit(questionCount);
-
+      const {
+        data: questions,
+        error
+      } = await query.limit(questionCount);
       if (error) throw error;
-
       if (!questions || questions.length === 0) {
         toast({
           title: "Žádné otázky",
@@ -104,13 +95,16 @@ export default function TestGenerators() {
 
       // Shuffle questions
       const shuffled = questions.sort(() => Math.random() - 0.5);
-      
-      navigate('/test', { 
-        state: { 
+      navigate('/test', {
+        state: {
           questions: shuffled.slice(0, questionCount),
           testType: 'classic',
-          filters: { selectedSubject, selectedCategory, selectedFaculty }
-        } 
+          filters: {
+            selectedSubject,
+            selectedCategory,
+            selectedFaculty
+          }
+        }
       });
     } catch (error) {
       console.error('Error creating test:', error);
@@ -123,7 +117,6 @@ export default function TestGenerators() {
       setLoading(false);
     }
   };
-
   const createAITest = async () => {
     if (!favoriteFaculty) {
       toast({
@@ -133,10 +126,12 @@ export default function TestGenerators() {
       });
       return;
     }
-
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-ai-questions', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('generate-ai-questions', {
         body: {
           subjectId: selectedSubject || null,
           categoryId: selectedCategory && selectedCategory !== 'all' ? selectedCategory : null,
@@ -144,9 +139,7 @@ export default function TestGenerators() {
           count: questionCount
         }
       });
-
       if (error) throw error;
-
       if (!data?.questions || data.questions.length === 0) {
         toast({
           title: "Chyba generování",
@@ -155,17 +148,19 @@ export default function TestGenerators() {
         });
         return;
       }
-
-      navigate('/test', { 
-        state: { 
+      navigate('/test', {
+        state: {
           questions: data.questions,
           testType: 'ai',
-          filters: { selectedSubject, selectedCategory, selectedFaculty }
-        } 
+          filters: {
+            selectedSubject,
+            selectedCategory,
+            selectedFaculty
+          }
+        }
       });
     } catch (error: any) {
       console.error('Error creating AI test:', error);
-      
       if (error.message?.includes('429')) {
         toast({
           title: "Příliš mnoho požadavků",
@@ -189,10 +184,8 @@ export default function TestGenerators() {
       setLoading(false);
     }
   };
-
   if (!selectedTestType) {
-    return (
-      <SidebarProvider>
+    return <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
           <main className="flex-1 p-8 bg-muted/50">
@@ -232,9 +225,7 @@ export default function TestGenerators() {
                     </div>
                     <CardTitle className="flex items-center gap-2">
                       AI Personalizovaný test
-                      <Badge variant="secondary" className="text-xs">
-                        Doporučeno
-                      </Badge>
+                      
                     </CardTitle>
                     <CardDescription>
                       Inteligentně generované otázky přizpůsobené vám
@@ -253,27 +244,20 @@ export default function TestGenerators() {
             </div>
           </main>
         </div>
-      </SidebarProvider>
-    );
+      </SidebarProvider>;
   }
-
-  return (
-    <SidebarProvider>
+  return <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <main className="flex-1 p-8 bg-muted/50">
           <div className="max-w-4xl mx-auto space-y-8">
             <div>
-              <Button 
-                variant="ghost" 
-                onClick={() => {
-                  setSelectedTestType(null);
-                  setSelectedSubject("");
-                  setSelectedCategory("");
-                  setSelectedFaculty("");
-                }}
-                className="mb-4"
-              >
+              <Button variant="ghost" onClick={() => {
+              setSelectedTestType(null);
+              setSelectedSubject("");
+              setSelectedCategory("");
+              setSelectedFaculty("");
+            }} className="mb-4">
                 ← Zpět na výběr typu
               </Button>
               <h1 className="text-4xl font-bold mb-2">
@@ -293,13 +277,11 @@ export default function TestGenerators() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  {selectedTestType === 'ai' && !favoriteFaculty && (
-                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  {selectedTestType === 'ai' && !favoriteFaculty && <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                       <p className="text-sm text-destructive">
                         Pro AI personalizované testy je nutné nastavit oblíbenou fakultu v nastavení
                       </p>
-                    </div>
-                  )}
+                    </div>}
 
                   <div>
                     <label className="text-sm font-medium mb-2 block">
@@ -311,11 +293,9 @@ export default function TestGenerators() {
                       </SelectTrigger>
                       <SelectContent>
                         {selectedTestType === 'ai' && <SelectItem value="all">Všechny předměty</SelectItem>}
-                        {subjects.map(subject => (
-                          <SelectItem key={subject.id} value={subject.id}>
+                        {subjects.map(subject => <SelectItem key={subject.id} value={subject.id}>
                             {subject.name}
-                          </SelectItem>
-                        ))}
+                          </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -324,27 +304,20 @@ export default function TestGenerators() {
                     <label className="text-sm font-medium mb-2 block">
                       Kategorie
                     </label>
-                    <Select 
-                      value={selectedCategory} 
-                      onValueChange={setSelectedCategory}
-                      disabled={!selectedSubject || selectedSubject === 'all'}
-                    >
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={!selectedSubject || selectedSubject === 'all'}>
                       <SelectTrigger>
                         <SelectValue placeholder="Všechny kategorie (volitelné)" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Všechny kategorie</SelectItem>
-                        {categories.map(category => (
-                          <SelectItem key={category.id} value={category.id}>
+                        {categories.map(category => <SelectItem key={category.id} value={category.id}>
                             {category.name}
-                          </SelectItem>
-                        ))}
+                          </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  {selectedTestType === 'classic' && (
-                    <div>
+                  {selectedTestType === 'classic' && <div>
                       <label className="text-sm font-medium mb-2 block">
                         Fakulta *
                       </label>
@@ -353,24 +326,18 @@ export default function TestGenerators() {
                           <SelectValue placeholder="Vyberte fakultu" />
                         </SelectTrigger>
                         <SelectContent>
-                          {faculties.map(faculty => (
-                            <SelectItem key={faculty.id} value={faculty.id}>
+                          {faculties.map(faculty => <SelectItem key={faculty.id} value={faculty.id}>
                               {faculty.name}
-                            </SelectItem>
-                          ))}
+                            </SelectItem>)}
                         </SelectContent>
                       </Select>
-                    </div>
-                  )}
+                    </div>}
                   
                   <div>
                     <label className="text-sm font-medium mb-2 block">
                       Počet otázek
                     </label>
-                    <Select 
-                      value={questionCount.toString()} 
-                      onValueChange={(val) => setQuestionCount(parseInt(val))}
-                    >
+                    <Select value={questionCount.toString()} onValueChange={val => setQuestionCount(parseInt(val))}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -384,34 +351,21 @@ export default function TestGenerators() {
                   </div>
                 </div>
 
-                <Button 
-                  className="w-full" 
-                  onClick={selectedTestType === 'classic' ? createClassicTest : createAITest}
-                  disabled={loading || (selectedTestType === 'classic' && (!selectedSubject || !selectedFaculty)) || (selectedTestType === 'ai' && !favoriteFaculty)}
-                >
-                  {loading ? (
-                    <>
+                <Button className="w-full" onClick={selectedTestType === 'classic' ? createClassicTest : createAITest} disabled={loading || selectedTestType === 'classic' && (!selectedSubject || !selectedFaculty) || selectedTestType === 'ai' && !favoriteFaculty}>
+                  {loading ? <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       {selectedTestType === 'classic' ? 'Vytváření...' : 'Generování...'}
-                    </>
-                  ) : (
-                    <>
-                      {selectedTestType === 'classic' ? (
-                        'Vytvořit test'
-                      ) : (
-                        <>
+                    </> : <>
+                      {selectedTestType === 'classic' ? 'Vytvořit test' : <>
                           <Brain className="mr-2 h-4 w-4" />
                           Vygenerovat test
-                        </>
-                      )}
-                    </>
-                  )}
+                        </>}
+                    </>}
                 </Button>
               </CardContent>
             </Card>
           </div>
         </main>
       </div>
-    </SidebarProvider>
-  );
+    </SidebarProvider>;
 }
