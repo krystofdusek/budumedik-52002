@@ -12,6 +12,7 @@ import TestGenerators from "./pages/dashboard/TestGenerators";
 import Progress from "./pages/dashboard/Progress";
 import Settings from "./pages/dashboard/Settings";
 import Leaderboard from "./pages/dashboard/Leaderboard";
+import History from "./pages/dashboard/History";
 import Test from "./pages/Test";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminReported from "./pages/admin/AdminReported";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/tests" element={<TestGenerators />} />
             <Route path="/dashboard/progress" element={<Progress />} />
+            <Route path="/dashboard/history" element={<History />} />
             <Route path="/dashboard/leaderboard" element={<Leaderboard />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/test" element={<Test />} />

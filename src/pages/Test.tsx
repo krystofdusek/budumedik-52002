@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flag, Heart } from "lucide-react";
 
 export default function Test() {
   const location = useLocation();
@@ -20,12 +20,31 @@ export default function Test() {
   const [answers, setAnswers] = useState<Record<number, string[]>>({});
   const [showResults, setShowResults] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
+  const [favoriteQuestions, setFavoriteQuestions] = useState<Set<string>>(new Set());
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!questions || questions.length === 0) {
-      navigate('/dashboard/test-generators');
+      navigate('/dashboard/tests');
     }
+    loadUserData();
   }, [questions, navigate]);
+
+  const loadUserData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUserId(user.id);
+      const { data: favs } = await supabase
+        .from("favorite_questions")
+        .select("question_id")
+        .eq("user_id", user.id);
+      
+      if (favs) {
+        setFavoriteQuestions(new Set(favs.map(f => f.question_id)));
+      }
+    }
+  };
 
   if (!questions || questions.length === 0) {
     return null;
@@ -53,6 +72,77 @@ export default function Test() {
     }
   };
 
+  const handleAnswerSubmit = async () => {
+    if (!userId || !question.id) return;
+    
+    const selectedAnswers = answers[currentQuestion] || [];
+    if (selectedAnswers.length === 0) {
+      toast({
+        title: "Vyberte odpověď",
+        description: "Před odesláním musíte vybrat alespoň jednu odpověď",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const isCorrect = 
+      selectedAnswers.length === question.correct_answers.length &&
+      selectedAnswers.every((ans) => question.correct_answers.includes(ans));
+
+    await supabase.from("user_answers").insert({
+      user_id: userId,
+      question_id: question.id,
+      selected_answers: selectedAnswers,
+      is_correct: isCorrect,
+    });
+
+    setAnsweredQuestions(new Set([...answeredQuestions, currentQuestion]));
+    
+    toast({
+      title: isCorrect ? "Správně!" : "Špatně",
+      description: isCorrect ? "Vaše odpověď je správná" : "Vaše odpověď není správná",
+      variant: isCorrect ? "default" : "destructive",
+    });
+  };
+
+  const toggleFavorite = async () => {
+    if (!userId || !question.id) return;
+    
+    const isFavorite = favoriteQuestions.has(question.id);
+
+    if (isFavorite) {
+      await supabase.from("favorite_questions").delete()
+        .eq("user_id", userId).eq("question_id", question.id);
+      
+      const newFavorites = new Set(favoriteQuestions);
+      newFavorites.delete(question.id);
+      setFavoriteQuestions(newFavorites);
+      toast({ title: "Odebráno z oblíbených" });
+    } else {
+      await supabase.from("favorite_questions")
+        .insert({ user_id: userId, question_id: question.id });
+      
+      setFavoriteQuestions(new Set([...favoriteQuestions, question.id]));
+      toast({ title: "Přidáno do oblíbených" });
+    }
+  };
+
+  const reportQuestion = async () => {
+    if (!userId || !question.id) return;
+    
+    const { error } = await supabase.from("question_reports").insert({
+      user_id: userId,
+      question_id: question.id,
+      reason: "Nahlášeno uživatelem během testu",
+    });
+
+    if (error) {
+      toast({ title: "Chyba", description: "Nepodařilo se nahlásit otázku", variant: "destructive" });
+    } else {
+      toast({ title: "Otázka nahlášena", description: "Děkujeme za nahlášení" });
+    }
+  };
+
   const goToNext = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
@@ -69,10 +159,7 @@ export default function Test() {
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('Not authenticated');
-      }
+      if (!user) throw new Error('Not authenticated');
 
       let correctCount = 0;
       const userAnswers = [];
@@ -88,8 +175,7 @@ export default function Test() {
 
         if (isCorrect) correctCount++;
 
-        // Only save answers for questions that are in the database (have an id)
-        if (q.id) {
+        if (q.id && !answeredQuestions.has(i)) {
           userAnswers.push({
             user_id: user.id,
             question_id: q.id,
@@ -99,43 +185,27 @@ export default function Test() {
         }
       }
 
-      // Save user answers
       if (userAnswers.length > 0) {
-        const { error: answersError } = await supabase
-          .from('user_answers')
-          .insert(userAnswers);
-
-        if (answersError) throw answersError;
+        await supabase.from('user_answers').insert(userAnswers);
       }
 
-      // Save test result
-      const { error: resultError } = await supabase
-        .from('test_results')
-        .insert({
-          user_id: user.id,
-          test_type: testType,
-          score: correctCount,
-          total_questions: questions.length,
-          subject_id: filters.selectedSubject,
-          category_id: filters.selectedCategory || null,
-          faculty_id: filters.selectedFaculty
-        });
-
-      if (resultError) throw resultError;
+      await supabase.from('test_results').insert({
+        user_id: user.id,
+        test_type: testType,
+        score: correctCount,
+        total_questions: questions.length,
+        subject_id: filters?.selectedSubject || null,
+        category_id: filters?.selectedCategory || null,
+        faculty_id: filters?.selectedFaculty || null
+      });
 
       setShowResults(true);
       toast({
         title: "Test odevzdán",
-        description: `Získali jste ${correctCount} z ${questions.length} bodů (${Math.round((correctCount / questions.length) * 100)}%)`,
+        description: `Získali jste ${correctCount} z ${questions.length} bodů`,
       });
-
     } catch (error) {
-      console.error('Error submitting test:', error);
-      toast({
-        title: "Chyba",
-        description: "Nepodařilo se odevzdat test",
-        variant: "destructive"
-      });
+      toast({ title: "Chyba", description: "Nepodařilo se odevzdat test", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -242,24 +312,19 @@ export default function Test() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between mb-4">
-              <CardTitle>
-                Otázka {currentQuestion + 1} z {questions.length}
-              </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (confirm('Opravdu chcete nahlásit tuto otázku?')) {
-                    toast({
-                      title: "Otázka nahlášena",
-                      description: "Děkujeme za zpětnou vazbu"
-                    });
-                  }
-                }}
-              >
-                <Flag className="h-4 w-4 mr-2" />
-                Nahlásit
-              </Button>
+              <CardTitle>Otázka {currentQuestion + 1} z {questions.length}</CardTitle>
+              <div className="flex gap-2">
+                {question.id && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={toggleFavorite}>
+                      <Heart className={`h-4 w-4 ${favoriteQuestions.has(question.id) ? 'fill-primary text-primary' : ''}`} />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={reportQuestion}>
+                      <Flag className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
             <Progress value={progress} className="h-2" />
           </CardHeader>
@@ -269,9 +334,7 @@ export default function Test() {
               
               {isMultipleChoice ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    (Vyberte všechny správné odpovědi)
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-2">(Vyberte všechny správné odpovědi)</p>
                   {['A', 'B', 'C', 'D', question.option_e ? 'E' : null].filter(Boolean).map((option) => (
                     <div key={option} className="flex items-center space-x-2">
                       <Checkbox
@@ -279,27 +342,18 @@ export default function Test() {
                         checked={(answers[currentQuestion] || []).includes(option!)}
                         onCheckedChange={(checked) => handleAnswerChange(option!, checked as boolean)}
                       />
-                      <Label 
-                        htmlFor={`option-${option}`}
-                        className="text-base cursor-pointer flex-1 py-2"
-                      >
+                      <Label htmlFor={`option-${option}`} className="text-base cursor-pointer flex-1 py-2">
                         {option}) {question[`option_${option!.toLowerCase()}`]}
                       </Label>
                     </div>
                   ))}
                 </div>
               ) : (
-                <RadioGroup
-                  value={(answers[currentQuestion] || [])[0] || ""}
-                  onValueChange={(value) => handleAnswerChange(value)}
-                >
+                <RadioGroup value={(answers[currentQuestion] || [])[0] || ""} onValueChange={(value) => handleAnswerChange(value)}>
                   {['A', 'B', 'C', 'D', question.option_e ? 'E' : null].filter(Boolean).map((option) => (
                     <div key={option} className="flex items-center space-x-2">
                       <RadioGroupItem value={option!} id={`option-${option}`} />
-                      <Label 
-                        htmlFor={`option-${option}`}
-                        className="text-base cursor-pointer flex-1 py-2"
-                      >
+                      <Label htmlFor={`option-${option}`} className="text-base cursor-pointer flex-1 py-2">
                         {option}) {question[`option_${option!.toLowerCase()}`]}
                       </Label>
                     </div>
@@ -308,27 +362,29 @@ export default function Test() {
               )}
             </div>
 
-            <div className="flex gap-4 pt-4">
-              <Button
-                variant="outline"
-                onClick={goToPrevious}
-                disabled={currentQuestion === 0}
-              >
-                <ChevronLeft className="h-4 w-4 mr-2" />
-                Předchozí
-              </Button>
-              
+            {answeredQuestions.has(currentQuestion) && question.explanation && (
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm font-medium mb-2">Vysvětlení:</p>
+                <p className="text-sm">{question.explanation}</p>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center pt-4">
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={goToPrevious} disabled={currentQuestion === 0}>
+                  <ChevronLeft className="h-4 w-4 mr-2" />Předchozí
+                </Button>
+                {!answeredQuestions.has(currentQuestion) && question.id && (
+                  <Button onClick={handleAnswerSubmit}>Odpovědět</Button>
+                )}
+              </div>
+
               {currentQuestion < questions.length - 1 ? (
-                <Button onClick={goToNext} className="flex-1">
-                  Další
-                  <ChevronRight className="h-4 w-4 ml-2" />
+                <Button onClick={goToNext}>
+                  Další<ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
-                <Button 
-                  onClick={submitTest} 
-                  className="flex-1"
-                  disabled={submitting}
-                >
+                <Button onClick={submitTest} disabled={submitting}>
                   {submitting ? 'Odevzdávání...' : 'Odevzdat test'}
                 </Button>
               )}

@@ -70,6 +70,35 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_questions: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_questions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -104,6 +133,7 @@ export type Database = {
       }
       question_reports: {
         Row: {
+          admin_notes: string | null
           created_at: string
           id: string
           question_id: string
@@ -114,6 +144,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_notes?: string | null
           created_at?: string
           id?: string
           question_id: string
@@ -124,6 +155,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_notes?: string | null
           created_at?: string
           id?: string
           question_id?: string
@@ -165,6 +197,8 @@ export type Database = {
           explanation: string | null
           faculty_id: string
           id: string
+          is_active: boolean
+          is_ai_generated: boolean
           option_a: string
           option_b: string
           option_c: string
@@ -182,6 +216,8 @@ export type Database = {
           explanation?: string | null
           faculty_id: string
           id?: string
+          is_active?: boolean
+          is_ai_generated?: boolean
           option_a: string
           option_b: string
           option_c: string
@@ -199,6 +235,8 @@ export type Database = {
           explanation?: string | null
           faculty_id?: string
           id?: string
+          is_active?: boolean
+          is_ai_generated?: boolean
           option_a?: string
           option_b?: string
           option_c?: string
@@ -437,6 +475,10 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: { user_id: string }; Returns: boolean }
+      resolve_question_report: {
+        Args: { notes?: string; report_id: string; resolution_status: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
