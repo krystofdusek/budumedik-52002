@@ -1,15 +1,17 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Target, Award, Users } from "lucide-react";
+import { TrendingUp, Target, Award, Users, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 type SubjectStats = {
   subjectName: string;
   totalQuestions: number;
   correctAnswers: number;
   successRate: number;
+  favoriteCount: number;
 };
 
 type FacultyComparison = {
@@ -68,6 +70,19 @@ export default function Progress() {
         .select(`
           is_correct,
           questions!inner(
+            id,
+            subject_id,
+            subjects!inner(name)
+          )
+        `)
+        .eq('user_id', user.id);
+
+      // Load favorite questions
+      const { data: favorites } = await supabase
+        .from('favorite_questions')
+        .select(`
+          question_id,
+          questions!inner(
             subject_id,
             subjects!inner(name)
           )
@@ -75,14 +90,14 @@ export default function Progress() {
         .eq('user_id', user.id);
 
       if (answers) {
-        const subjectMap: Record<string, { correct: number; total: number; name: string }> = {};
+        const subjectMap: Record<string, { correct: number; total: number; name: string; favorites: number }> = {};
         
         answers.forEach((answer: any) => {
           const subjectId = answer.questions.subject_id;
           const subjectName = answer.questions.subjects.name;
           
           if (!subjectMap[subjectId]) {
-            subjectMap[subjectId] = { correct: 0, total: 0, name: subjectName };
+            subjectMap[subjectId] = { correct: 0, total: 0, name: subjectName, favorites: 0 };
           }
           
           subjectMap[subjectId].total++;
@@ -91,11 +106,26 @@ export default function Progress() {
           }
         });
 
+        // Add favorite counts
+        if (favorites) {
+          favorites.forEach((fav: any) => {
+            const subjectId = fav.questions.subject_id;
+            const subjectName = fav.questions.subjects.name;
+            
+            if (!subjectMap[subjectId]) {
+              subjectMap[subjectId] = { correct: 0, total: 0, name: subjectName, favorites: 0 };
+            }
+            
+            subjectMap[subjectId].favorites++;
+          });
+        }
+
         const subjectStatsData: SubjectStats[] = Object.values(subjectMap).map(stat => ({
           subjectName: stat.name,
           totalQuestions: stat.total,
           correctAnswers: stat.correct,
-          successRate: stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0
+          successRate: stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0,
+          favoriteCount: stat.favorites
         }));
 
         setSubjectStats(subjectStatsData);
@@ -200,32 +230,81 @@ export default function Progress() {
                 </div>
 
                 {subjectStats.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Pokrok podle předmětů</CardTitle>
-                      <CardDescription>
-                        Vaše úspěšnost v jednotlivých předmětech
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {subjectStats.map((subject) => (
-                        <div key={subject.subjectName}>
-                          <div className="flex justify-between mb-2">
-                            <span className="font-medium">{subject.subjectName}</span>
-                            <span className="text-muted-foreground">
-                              {subject.successRate}% ({subject.correctAnswers}/{subject.totalQuestions})
-                            </span>
-                          </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary" 
-                              style={{ width: `${subject.successRate}%` }} 
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Úspěšnost podle předmětů</CardTitle>
+                        <CardDescription>
+                          Graf úspěšnosti v jednotlivých předmětech
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={subjectStats}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="subjectName" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="successRate" fill="hsl(var(--primary))" name="Úspěšnost (%)" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Počet pokusů podle předmětů</CardTitle>
+                          <CardDescription>
+                            Celkový počet zodpovězených otázek
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={subjectStats}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="subjectName" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="totalQuestions" fill="hsl(var(--chart-1))" name="Celkem otázek" />
+                              <Bar dataKey="correctAnswers" fill="hsl(var(--chart-2))" name="Správné odpovědi" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Oblíbené otázky podle předmětů</CardTitle>
+                          <CardDescription>
+                            Počet otázek, které jste si oblíbili
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                              <Pie
+                                data={subjectStats}
+                                dataKey="favoriteCount"
+                                nameKey="subjectName"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                label={(entry) => `${entry.subjectName}: ${entry.favoriteCount}`}
+                              >
+                                {subjectStats.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
                 )}
 
                 {facultyComparison && (

@@ -495,6 +495,7 @@ export type Database = {
         }[]
       }
       is_admin: { Args: { user_id: string }; Returns: boolean }
+      recalculate_user_statistics: { Args: never; Returns: undefined }
       resolve_question_report: {
         Args: { notes?: string; report_id: string; resolution_status: string }
         Returns: undefined
