@@ -1,5 +1,6 @@
 import { Home, FileText, BarChart3, Settings, Shield, LogOut, Trophy, History } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -30,9 +31,33 @@ const adminItems = [
   { title: "Nahlášené otázky", url: "/admin/reported", icon: FileText },
 ];
 
-export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
+export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {}) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    if (isAdminProp !== undefined) {
+      setIsAdmin(isAdminProp);
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    setIsAdmin(!!data);
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

@@ -85,9 +85,11 @@ export default function Test() {
       return;
     }
 
+    const normalizedSelected = selectedAnswers.map(a => a.toLowerCase());
+    const normalizedCorrect = question.correct_answers.map((a: string) => a.toLowerCase());
     const isCorrect = 
-      selectedAnswers.length === question.correct_answers.length &&
-      selectedAnswers.every((ans) => question.correct_answers.includes(ans));
+      normalizedSelected.length === normalizedCorrect.length &&
+      normalizedSelected.every((ans) => normalizedCorrect.includes(ans));
 
     await supabase.from("user_answers").insert({
       user_id: userId,
@@ -169,9 +171,11 @@ export default function Test() {
         const userAnswer = answers[i] || [];
         const correctAnswer = q.correct_answers || [];
         
+        const normalizedUserAnswer = userAnswer.map((a: string) => a.toLowerCase());
+        const normalizedCorrectAnswer = correctAnswer.map((a: string) => a.toLowerCase());
         const isCorrect = 
-          userAnswer.length === correctAnswer.length &&
-          userAnswer.every((a: string) => correctAnswer.includes(a));
+          normalizedUserAnswer.length === normalizedCorrectAnswer.length &&
+          normalizedUserAnswer.every((a: string) => normalizedCorrectAnswer.includes(a));
 
         if (isCorrect) correctCount++;
 
@@ -217,9 +221,12 @@ export default function Test() {
       const userAnswer = answers[i] || [];
       const correctAnswer = q.correct_answers || [];
       
+      const normalizedUserAnswer = userAnswer.map((a: string) => a.toLowerCase());
+      const normalizedCorrectAnswer = correctAnswer.map((a: string) => a.toLowerCase());
+      
       if (
-        userAnswer.length === correctAnswer.length &&
-        userAnswer.every((a: string) => correctAnswer.includes(a))
+        normalizedUserAnswer.length === normalizedCorrectAnswer.length &&
+        normalizedUserAnswer.every((a: string) => normalizedCorrectAnswer.includes(a))
       ) {
         correct++;
       }
@@ -252,9 +259,11 @@ export default function Test() {
                 {questions.map((q: any, i: number) => {
                   const userAnswer = answers[i] || [];
                   const correctAnswer = q.correct_answers || [];
+                  const normalizedUserAnswer = userAnswer.map((a: string) => a.toLowerCase());
+                  const normalizedCorrectAnswer = correctAnswer.map((a: string) => a.toLowerCase());
                   const isCorrect = 
-                    userAnswer.length === correctAnswer.length &&
-                    userAnswer.every((a: string) => correctAnswer.includes(a));
+                    normalizedUserAnswer.length === normalizedCorrectAnswer.length &&
+                    normalizedUserAnswer.every((a: string) => normalizedCorrectAnswer.includes(a));
 
                   return (
                     <Card key={i} className={isCorrect ? "border-green-500" : "border-red-500"}>
