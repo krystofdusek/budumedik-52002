@@ -1,4 +1,4 @@
-import { Home, FileText, BarChart3, Settings, Shield, LogOut, Trophy } from "lucide-react";
+import { Home, FileText, BarChart3, Settings, Shield, LogOut, Trophy, History } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -21,6 +21,7 @@ const items = [
   { title: "Generátory testů", url: "/dashboard/tests", icon: FileText },
   { title: "Můj pokrok", url: "/dashboard/progress", icon: BarChart3 },
   { title: "Žebříček", url: "/dashboard/leaderboard", icon: Trophy },
+  { title: "Historie", url: "/dashboard/history", icon: History },
   { title: "Nastavení", url: "/dashboard/settings", icon: Settings },
 ];
 

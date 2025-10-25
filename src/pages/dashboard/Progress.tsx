@@ -120,95 +120,31 @@ export default function Progress() {
   };
 
   const loadFacultyComparison = async (userId: string, facultyId: string) => {
-    // Get all users with the same favorite faculty
-    const { data: facultyUsers } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('favorite_faculty_id', facultyId);
-
-    if (!facultyUsers || facultyUsers.length === 0) return;
-
-    const userIds = facultyUsers.map(u => u.id);
-
-    // Get statistics for all faculty users
-    const { data: facultyStats } = await supabase
-      .from('user_statistics')
-      .select('*')
-      .in('user_id', userIds);
-
-    if (!facultyStats) return;
-
-    // Calculate faculty average
-    const totalUsers = facultyStats.length;
-    const facultyTotalCorrect = facultyStats.reduce((sum, s) => sum + s.total_correct_answers, 0);
-    const facultyTotalQuestions = facultyStats.reduce((sum, s) => sum + s.total_questions_answered, 0);
-    const facultyAverage = facultyTotalQuestions > 0 
-      ? Math.round((facultyTotalCorrect / facultyTotalQuestions) * 100) 
-      : 0;
-
-    // Get user's success rate
-    const userStat = facultyStats.find(s => s.user_id === userId);
-    const yourSuccessRate = userStat && userStat.total_questions_answered > 0
-      ? Math.round((userStat.total_correct_answers / userStat.total_questions_answered) * 100)
-      : 0;
-
-    // Calculate subject comparison
-    const { data: allAnswers } = await supabase
-      .from('user_answers')
-      .select(`
-        user_id,
-        is_correct,
-        questions!inner(
-          subject_id,
-          subjects!inner(name)
-        )
-      `)
-      .in('user_id', userIds);
-
-    if (allAnswers) {
-      const subjectMap: Record<string, {
-        name: string;
-        userCorrect: number;
-        userTotal: number;
-        facultyCorrect: number;
-        facultyTotal: number;
-      }> = {};
-
-      allAnswers.forEach((answer: any) => {
-        const subjectId = answer.questions.subject_id;
-        const subjectName = answer.questions.subjects.name;
-        const isUser = answer.user_id === userId;
-
-        if (!subjectMap[subjectId]) {
-          subjectMap[subjectId] = {
-            name: subjectName,
-            userCorrect: 0,
-            userTotal: 0,
-            facultyCorrect: 0,
-            facultyTotal: 0
-          };
-        }
-
-        if (isUser) {
-          subjectMap[subjectId].userTotal++;
-          if (answer.is_correct) subjectMap[subjectId].userCorrect++;
-        }
-        
-        subjectMap[subjectId].facultyTotal++;
-        if (answer.is_correct) subjectMap[subjectId].facultyCorrect++;
+    try {
+      const { data, error } = await supabase.rpc('get_faculty_comparison', {
+        p_user_id: userId,
+        p_faculty_id: facultyId
       });
 
-      const subjectComparison = Object.values(subjectMap).map(stat => ({
-        subjectName: stat.name,
-        yourRate: stat.userTotal > 0 ? Math.round((stat.userCorrect / stat.userTotal) * 100) : 0,
-        facultyRate: stat.facultyTotal > 0 ? Math.round((stat.facultyCorrect / stat.facultyTotal) * 100) : 0
-      }));
+      if (error) {
+        console.error('Error loading faculty comparison:', error);
+        return;
+      }
 
-      setFacultyComparison({
-        yourSuccessRate,
-        facultyAverage,
-        subjectComparison
-      });
+      if (data && data.length > 0) {
+        const result = data[0];
+        const subjectComparisons = typeof result.subject_comparisons === 'string' 
+          ? JSON.parse(result.subject_comparisons)
+          : result.subject_comparisons;
+          
+        setFacultyComparison({
+          yourSuccessRate: result.your_success_rate || 0,
+          facultyAverage: result.faculty_average || 0,
+          subjectComparison: Array.isArray(subjectComparisons) ? subjectComparisons : []
+        });
+      }
+    } catch (error) {
+      console.error('Error in loadFacultyComparison:', error);
     }
   };
 

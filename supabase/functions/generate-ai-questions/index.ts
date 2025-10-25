@@ -233,8 +233,53 @@ Pro fyziku na 3LF/LFHK vytvárej hlavně složité příklady s výpočty.`;
 
     console.log(`Generated ${generatedQuestions.length} questions`);
 
+    // Distribute questions across subjects and categories
+    const questionsToInsert = [];
+    const questionsPerSubject = Math.ceil(count / Math.max(subjects.length, 1));
+    
+    for (let i = 0; i < generatedQuestions.length; i++) {
+      const q = generatedQuestions[i];
+      
+      // Distribute across subjects if multiple
+      const subjectIndex = subjects.length > 1 ? Math.floor(i / questionsPerSubject) % subjects.length : 0;
+      const selectedSubject = subjects[subjectIndex] || subjects[0];
+      
+      // Distribute across categories if multiple
+      const categoryIndex = categories.length > 1 ? i % categories.length : 0;
+      const selectedCategory = categories.length > 0 ? categories[categoryIndex] : null;
+
+      questionsToInsert.push({
+        question_text: q.question_text,
+        option_a: q.option_a,
+        option_b: q.option_b,
+        option_c: q.option_c,
+        option_d: q.option_d,
+        option_e: q.option_e || null,
+        correct_answers: q.correct_answers,
+        explanation: q.explanation || null,
+        subject_id: selectedSubject.id,
+        category_id: selectedCategory?.id || categoryId,
+        faculty_id: facultyId,
+        is_ai_generated: true,
+        is_active: true
+      });
+    }
+
+    // Insert questions into database
+    const { data: insertedQuestions, error: insertError } = await supabase
+      .from('questions')
+      .insert(questionsToInsert)
+      .select();
+
+    if (insertError) {
+      console.error('Error inserting questions:', insertError);
+      throw insertError;
+    }
+
+    console.log(`Inserted ${insertedQuestions.length} AI questions into database`);
+
     return new Response(
-      JSON.stringify({ questions: generatedQuestions }),
+      JSON.stringify({ questions: insertedQuestions }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 

@@ -474,6 +474,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_faculty_comparison: {
+        Args: { p_faculty_id: string; p_user_id: string }
+        Returns: {
+          faculty_average: number
+          subject_comparisons: Json
+          your_success_rate: number
+        }[]
+      }
       get_leaderboard: {
         Args: never
         Returns: {
