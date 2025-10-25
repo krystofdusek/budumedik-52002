@@ -25,25 +25,22 @@ export default function Leaderboard() {
 
   const loadLeaderboard = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data: stats } = await supabase
-        .from('user_statistics')
-        .select('*')
-        .order('activity_score', { ascending: false });
+      const { data: stats, error } = await supabase.rpc('get_leaderboard');
+
+      if (error) throw error;
 
       if (stats) {
-        const leaderboardData: LeaderboardEntry[] = stats.map((stat, index) => {
+        const leaderboardData: LeaderboardEntry[] = stats.map((stat) => {
           const successRate = stat.total_questions_answered > 0 
             ? (stat.total_correct_answers / stat.total_questions_answered) * 100 
             : 0;
           
           // Generate anonymous username based on rank
-          const username = `Student #${index + 1}`;
+          const username = stat.is_current_user ? "Vy" : `Student #${stat.rank}`;
           
           return {
-            rank: index + 1,
-            username: stat.user_id === user?.id ? "Vy" : username,
+            rank: stat.rank,
+            username,
             activityScore: stat.activity_score,
             questionsAnswered: stat.total_questions_answered,
             testsCompleted: stat.total_tests_completed,
@@ -54,11 +51,9 @@ export default function Leaderboard() {
         setLeaderboard(leaderboardData);
 
         // Find current user's rank
-        if (user) {
-          const userIndex = stats.findIndex(s => s.user_id === user.id);
-          if (userIndex !== -1) {
-            setCurrentUserRank(userIndex + 1);
-          }
+        const currentUser = stats.find(s => s.is_current_user);
+        if (currentUser) {
+          setCurrentUserRank(Number(currentUser.rank));
         }
       }
     } catch (error) {

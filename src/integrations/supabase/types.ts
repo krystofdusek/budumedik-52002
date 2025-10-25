@@ -474,6 +474,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_leaderboard: {
+        Args: never
+        Returns: {
+          activity_score: number
+          is_current_user: boolean
+          rank: number
+          total_correct_answers: number
+          total_questions_answered: number
+          total_tests_completed: number
+          user_id: string
+        }[]
+      }
       is_admin: { Args: { user_id: string }; Returns: boolean }
       resolve_question_report: {
         Args: { notes?: string; report_id: string; resolution_status: string }

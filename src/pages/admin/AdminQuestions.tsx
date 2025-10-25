@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +13,25 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Trash2, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const questionSchema = z.object({
+  question_text: z.string().trim().min(10, "Otázka musí mít alespoň 10 znaků").max(1000, "Otázka může mít maximálně 1000 znaků"),
+  option_a: z.string().trim().min(1, "Možnost A je povinná").max(500, "Možnost může mít maximálně 500 znaků"),
+  option_b: z.string().trim().min(1, "Možnost B je povinná").max(500, "Možnost může mít maximálně 500 znaků"),
+  option_c: z.string().trim().min(1, "Možnost C je povinná").max(500, "Možnost může mít maximálně 500 znaků"),
+  option_d: z.string().trim().min(1, "Možnost D je povinná").max(500, "Možnost může mít maximálně 500 znaků"),
+  option_e: z.string().max(500, "Možnost může mít maximálně 500 znaků").optional().nullable(),
+  correct_answers: z.array(z.string()).min(1, "Musí být vybrána alespoň jedna správná odpověď"),
+  explanation: z.string().max(2000, "Vysvětlení může mít maximálně 2000 znaků").optional(),
+  subject_id: z.string().uuid("Neplatné ID předmětu"),
+  category_id: z.string().uuid("Neplatné ID kategorie"),
+  faculty_id: z.string().uuid("Neplatné ID fakulty"),
+  year: z.number().int().min(2000, "Rok musí být minimálně 2000").max(new Date().getFullYear() + 1, "Rok nemůže být v budoucnosti")
+});
 
 export default function AdminQuestions() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [questions, setQuestions] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -21,6 +39,8 @@ export default function AdminQuestions() {
   const [faculties, setFaculties] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     question_text: '',
@@ -38,8 +58,36 @@ export default function AdminQuestions() {
   });
 
   useEffect(() => {
-    loadData();
+    checkAdmin();
   }, []);
+
+  const checkAdmin = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .single();
+
+    if (!roles) {
+      toast({
+        title: "Přístup odepřen",
+        description: "Nemáte oprávnění k této stránce",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+      return;
+    }
+
+    setIsAdmin(true);
+    loadData();
+  };
 
   useEffect(() => {
     if (formData.subject_id) {
@@ -86,23 +134,31 @@ export default function AdminQuestions() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setValidationErrors({});
 
     try {
+      // Validate form data
+      const validated = questionSchema.parse({
+        ...formData,
+        option_e: formData.option_e || null,
+        explanation: formData.explanation || undefined
+      });
+
       const { error } = await supabase
         .from('questions')
         .insert([{
-          question_text: formData.question_text,
-          option_a: formData.option_a,
-          option_b: formData.option_b,
-          option_c: formData.option_c,
-          option_d: formData.option_d,
-          option_e: formData.option_e || null,
-          correct_answers: formData.correct_answers,
-          explanation: formData.explanation,
-          subject_id: formData.subject_id,
-          category_id: formData.category_id,
-          faculty_id: formData.faculty_id,
-          year: formData.year
+          question_text: validated.question_text,
+          option_a: validated.option_a,
+          option_b: validated.option_b,
+          option_c: validated.option_c,
+          option_d: validated.option_d,
+          option_e: validated.option_e || null,
+          correct_answers: validated.correct_answers,
+          explanation: validated.explanation || null,
+          subject_id: validated.subject_id,
+          category_id: validated.category_id,
+          faculty_id: validated.faculty_id,
+          year: validated.year
         }]);
 
       if (error) throw error;
@@ -116,12 +172,27 @@ export default function AdminQuestions() {
       resetForm();
       loadData();
     } catch (error) {
-      console.error('Error adding question:', error);
-      toast({
-        title: "Chyba",
-        description: "Nepodařilo se přidat otázku",
-        variant: "destructive"
-      });
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0].toString()] = err.message;
+          }
+        });
+        setValidationErrors(errors);
+        toast({
+          title: "Chyba validace",
+          description: "Zkontrolujte zadané hodnoty",
+          variant: "destructive"
+        });
+      } else {
+        console.error('Error adding question:', error);
+        toast({
+          title: "Chyba",
+          description: "Nepodařilo se přidat otázku",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -169,7 +240,12 @@ export default function AdminQuestions() {
       faculty_id: '',
       year: new Date().getFullYear()
     });
+    setValidationErrors({});
   };
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <SidebarProvider>
@@ -274,6 +350,9 @@ export default function AdminQuestions() {
                         required
                         rows={3}
                       />
+                      {validationErrors.question_text && (
+                        <p className="text-sm text-destructive mt-1">{validationErrors.question_text}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -308,7 +387,14 @@ export default function AdminQuestions() {
                         onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
                         rows={3}
                       />
+                      {validationErrors.explanation && (
+                        <p className="text-sm text-destructive mt-1">{validationErrors.explanation}</p>
+                      )}
                     </div>
+
+                    {validationErrors.correct_answers && (
+                      <p className="text-sm text-destructive">{validationErrors.correct_answers}</p>
+                    )}
 
                     <Button type="submit" disabled={loading}>
                       {loading ? 'Přidávání...' : 'Přidat otázku'}
