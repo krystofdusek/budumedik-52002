@@ -23,13 +23,15 @@ export default function Settings() {
   }, []);
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    setUserId(user.id);
+    // Load faculties for the dropdown regardless of auth
+    const { data: facultiesData, error: facErr } = await supabase.from('faculties').select('*').order('name');
+    if (!facErr) setFaculties(facultiesData || []);
 
-    const { data: facultiesData } = await supabase.from('faculties').select('*');
-    setFaculties(facultiesData || []);
+    // Then try to load the current user to preselect favorite faculty
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return; // User might not be logged in in preview/screenshot mode
+
+    setUserId(user.id);
 
     const { data: profile } = await supabase
       .from('profiles')
