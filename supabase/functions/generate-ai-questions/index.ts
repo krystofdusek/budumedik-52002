@@ -68,21 +68,28 @@ serve(async (req) => {
       if (subject) subjects = [subject];
     }
 
-    // Fetch all categories if no specific category selected (but subject is selected)
-    let categories: any[] = [];
-    if (subjectId && !categoryId) {
-      const { data: allCategories } = await supabase
+    // Fetch categories for all subjects or specific subject
+    let subjectCategoriesMap: Record<string, any[]> = {};
+    if (!subjectId) {
+      // If no specific subject, fetch categories for all subjects
+      for (const subject of subjects) {
+        const { data: cats } = await supabase
+          .from('categories')
+          .select('id, name, subject_id')
+          .eq('subject_id', subject.id);
+        if (cats && cats.length > 0) {
+          subjectCategoriesMap[subject.id] = cats;
+        }
+      }
+    } else if (!categoryId) {
+      // If subject selected but no category, fetch all categories for that subject
+      const { data: cats } = await supabase
         .from('categories')
-        .select('id, name')
+        .select('id, name, subject_id')
         .eq('subject_id', subjectId);
-      categories = allCategories || [];
-    } else if (categoryId) {
-      const { data: category } = await supabase
-        .from('categories')
-        .select('id, name')
-        .eq('id', categoryId)
-        .single();
-      if (category) categories = [category];
+      if (cats) {
+        subjectCategoriesMap[subjectId] = cats;
+      }
     }
 
     // Fetch sample questions from database for context
@@ -125,10 +132,22 @@ serve(async (req) => {
     }
 
     let categoryInfo = '';
-    if (categories.length === 1) {
-      categoryInfo = `KATEGORIE: ${categories[0].name}`;
-    } else if (categories.length > 1) {
-      categoryInfo = `KATEGORIE: Rovnoměrně distribuuj otázky mezi tyto kategorie:\n${categories.map(c => `- ${c.name}`).join('\n')}`;
+    if (categoryId) {
+      // Fetch the specific category name
+      const { data: cat } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('id', categoryId)
+        .single();
+      if (cat) {
+        categoryInfo = `KATEGORIE: ${cat.name}`;
+      }
+    } else {
+      // Get all categories for the prompt
+      const allCats = Object.values(subjectCategoriesMap).flat();
+      if (allCats.length > 0) {
+        categoryInfo = `KATEGORIE: Rovnoměrně distribuuj otázky mezi tyto kategorie:\n${allCats.map((c: any) => `- ${c.name}`).join('\n')}`;
+      }
     }
 
     const systemPrompt = `Jsi expert na tvorbu přijímacích otázek na lékařské fakulty v České republice. 
@@ -244,9 +263,34 @@ Pro fyziku na 3LF/LFHK vytvárej hlavně složité příklady s výpočty.`;
       const subjectIndex = subjects.length > 1 ? Math.floor(i / questionsPerSubject) % subjects.length : 0;
       const selectedSubject = subjects[subjectIndex] || subjects[0];
       
-      // Distribute across categories if multiple
-      const categoryIndex = categories.length > 1 ? i % categories.length : 0;
-      const selectedCategory = categories.length > 0 ? categories[categoryIndex] : null;
+      // Get categories for this subject
+      let availableCategories = subjectCategoriesMap[selectedSubject.id] || [];
+      
+      // If we have a specific categoryId, use it
+      let finalCategoryId = categoryId;
+      
+      // Otherwise distribute across available categories
+      if (!categoryId && availableCategories.length > 0) {
+        const categoryIndex = i % availableCategories.length;
+        finalCategoryId = availableCategories[categoryIndex].id;
+      }
+      
+      // If still no category, fetch first available for this subject
+      if (!finalCategoryId) {
+        const { data: firstCat } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('subject_id', selectedSubject.id)
+          .limit(1)
+          .single();
+        
+        if (firstCat) {
+          finalCategoryId = firstCat.id;
+        } else {
+          console.error(`No category found for subject ${selectedSubject.id}`);
+          continue; // Skip this question if no category exists
+        }
+      }
 
       questionsToInsert.push({
         question_text: q.question_text,
@@ -258,7 +302,7 @@ Pro fyziku na 3LF/LFHK vytvárej hlavně složité příklady s výpočty.`;
         correct_answers: q.correct_answers,
         explanation: q.explanation || null,
         subject_id: selectedSubject.id,
-        category_id: selectedCategory?.id || categoryId,
+        category_id: finalCategoryId,
         faculty_id: facultyId,
         is_ai_generated: true,
         is_active: true
