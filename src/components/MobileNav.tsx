@@ -62,7 +62,7 @@ export function MobileNav({ isAdmin = false }: MobileNavProps) {
               <img 
                 src={logo} 
                 alt="Logo" 
-                className="h-16 w-auto mx-auto invert dark:invert-0" 
+                className="h-20 w-auto mx-auto invert dark:invert-0" 
               />
             </div>
 
