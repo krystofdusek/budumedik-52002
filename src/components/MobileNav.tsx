@@ -112,7 +112,7 @@ export function MobileNav({ isAdmin = false }: MobileNavProps) {
               )}
 
               <div className="pt-4 border-t border-border space-y-2">
-                <div className="px-3 py-2 flex justify-center">
+                <div className="px-3 py-2">
                   <ThemeToggle />
                 </div>
                 <Button

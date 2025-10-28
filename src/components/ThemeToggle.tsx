@@ -12,7 +12,7 @@ export function ThemeToggle() {
       aria-label="Toggle theme"
     >
       <div
-        className={`absolute top-1 flex items-center justify-center w-10 h-10 rounded-full bg-background border-2 border-primary/40 shadow-lg transition-all duration-500 ${
+        className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-background border-2 border-primary/40 shadow-lg transition-all duration-500 ${
           theme === "light" ? "left-1" : "left-[calc(100%-2.75rem)]"
         }`}
       >

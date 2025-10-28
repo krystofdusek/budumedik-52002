@@ -137,7 +137,7 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <div className="px-2 py-2 flex justify-center">
+                <div className="px-2 py-2">
                   <ThemeToggle />
                 </div>
               </SidebarMenuItem>
