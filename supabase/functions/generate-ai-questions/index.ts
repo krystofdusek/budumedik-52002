@@ -173,7 +173,7 @@ serve(async (req) => {
       total: number; 
       categoryName: string;
       subjectName: string;
-      examples: string[];
+      incorrectQuestions: any[];
     }> = {};
     
     userAnswers?.forEach((answer: any) => {
@@ -187,7 +187,7 @@ serve(async (req) => {
           total: 0,
           categoryName: catName,
           subjectName: subjectName,
-          examples: []
+          incorrectQuestions: []
         };
       }
       
@@ -195,9 +195,15 @@ serve(async (req) => {
       if (answer.is_correct) {
         categoryStats[catId].correct++;
       } else {
-        // Store examples of questions user got wrong
-        if (categoryStats[catId].examples.length < 3) {
-          categoryStats[catId].examples.push(answer.questions.question_text);
+        // Store full question details for questions user got wrong (up to 5 per category)
+        if (categoryStats[catId].incorrectQuestions.length < 5) {
+          categoryStats[catId].incorrectQuestions.push({
+            questionText: answer.questions.question_text,
+            correctAnswers: answer.questions.correct_answers,
+            userAnswers: answer.selected_answers,
+            categoryName: catName,
+            subjectName: subjectName
+          });
         }
         incorrectAnswers.push(answer);
       }
@@ -215,8 +221,13 @@ serve(async (req) => {
         name: stats.categoryName,
         subject: stats.subjectName,
         successRate: Math.round((stats.correct / stats.total) * 100),
-        exampleErrors: stats.examples
+        incorrectQuestions: stats.incorrectQuestions
       }));
+    
+    // Collect all incorrect questions for prompting (limited to most recent 10)
+    const allIncorrectQuestions = Object.values(categoryStats)
+      .flatMap(stats => stats.incorrectQuestions)
+      .slice(0, 10);
 
     console.log(`User performance analysis:`, {
       totalAnswered,
@@ -252,26 +263,36 @@ serve(async (req) => {
       }
     }
 
-    // Build personalization context
+    // Build personalization context with incorrect questions
     let personalizationContext = '';
-    if (hasHistoricalData && weakCategories.length > 0) {
-      personalizationContext = `\n\n📊 PERSONALIZACE PRO UŽIVATELE:
+    if (hasHistoricalData && allIncorrectQuestions.length > 0) {
+      personalizationContext = `\n\n📊 PERSONALIZACE - CHYBY UŽIVATELE:
 Uživatel absolvoval ${totalAnswered} otázek pro ${faculty.name}.
 
-🎯 SLABÉ STRÁNKY (zaměř se na tyto oblasti):
-${weakCategories.map((cat, i) => 
-  `${i+1}. ${cat.subject} - ${cat.name} (${cat.successRate}% úspěšnost)
-   Příklady otázek, které uživatel nezodpověděl správně:
-   ${cat.exampleErrors.map((q, j) => `   ${j+1}. ${q.substring(0, 100)}...`).join('\n')}`
-).join('\n\n')}
+🎯 OTÁZKY, VE KTERÝCH UŽIVATEL CHYBOVAL:
+${allIncorrectQuestions.map((q, i) => 
+  `${i+1}. [${q.subjectName} - ${q.categoryName}]
+   Otázka: ${q.questionText}
+   Správná odpověď: ${q.correctAnswers.join(', ')}
+   Uživatel odpověděl: ${q.userAnswers.join(', ')}
+`).join('\n')}
 
-⚠️ Vytvoř otázky, které PŘÍMO TESTUJÍ tyto slabé oblasti!`;
+⚠️ TVŮJ ÚKOL: Vytvoř PODOBNÉ otázky jako ty výše!
+- Stejné téma a typ otázky
+- Podobná struktura a formulace
+- Ale JINÉ konkrétní příklady a detaily
+- Testuj STEJNÉ koncepty, které uživatel nezvládá
+
+🎯 SLABÉ KATEGORIE:
+${weakCategories.map((cat, i) => 
+  `${i+1}. ${cat.subject} - ${cat.name} (${cat.successRate}% úspěšnost) - ${cat.incorrectQuestions.length} chyb`
+).join('\n')}`;
     } else if (hasHistoricalData && weakCategories.length === 0) {
       personalizationContext = `\n\n✅ Uživatel má dobrou úspěšnost ve všech dosavadních kategoriích (${totalAnswered} zodpovězených otázek).
-Vytvoř balanced test pokrývající všechny důležité oblasti.`;
+Vytvoř vyvážený test pokrývající všechny důležité oblasti.`;
     } else {
       personalizationContext = `\n\n⚡ PRVNÍ TEST PRO UŽIVATELE - žádná historická data.
-Test bude generován bez personalizace. Pokrýt všechny základní oblasti rovnoměrně.`;
+Test bude generován bez personalizace. Pokryj všechny základní oblasti rovnoměrně.`;
     }
 
     // Add historical questions context
@@ -313,11 +334,17 @@ ${historicalContext}
 - Autentické, odpovídající reálným přijímacím zkouškám
 - S jasným vysvětlením správné odpovědi
 - Vhodné obtížnosti pro medicínské studium
-- Zaměřené na identifikované slabé stránky uživatele
 ${!subjectId ? '- Rovnoměrně mezi předměty' : ''}
 ${!categoryId && subjectId ? '- Rovnoměrně mezi kategorie předmětu' : ''}
 
-🎯 KLÍČOVÉ: Pokud má uživatel slabé stránky, vytvoř otázky PŘÍMO testující tyto oblasti!`;
+🎯 KRITICKÉ PRAVIDLO: 
+${allIncorrectQuestions.length > 0 
+  ? `Většinu otázek (minimálně ${Math.ceil(count * 0.6)}) vytvoř PODOBNÉ těm, ve kterých uživatel chyboval!
+- Zaměř se na STEJNÁ TÉMATA a KONCEPTY
+- Použij PODOBNOU STRUKTURU otázky
+- Ale změň konkrétní příklady, čísla, názvy
+- Cílem je procvičit STEJNÉ vědomosti novým způsobem` 
+  : 'Vytvoř vyvážený test pokrývající všechny základní oblasti.'}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',

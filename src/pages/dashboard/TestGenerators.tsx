@@ -164,7 +164,7 @@ export default function TestGenerators() {
       } else if (data.personalized && data.weakAreasCount > 0) {
         toast({
           title: "✨ Personalizovaný test vytvořen",
-          description: `Test zaměřený na ${data.weakAreasCount} slabých oblastí z ${data.totalAnswered} zodpovězených otázek`,
+          description: `Otázky podobné těm, ve kterých jste chybovali - zaměřené na ${data.weakAreasCount} slabých oblastí`,
         });
       }
 
