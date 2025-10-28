@@ -31,6 +31,11 @@
       { path: '/data/2lf/Organická_chemie.md', category: 'Organická chemie' }
     ];
 
+    // Auto-start import on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('importBtn').click();
+    });
+
     document.getElementById('importBtn').addEventListener('click', async () => {
       const statusDiv = document.getElementById('status');
       const resultsDiv = document.getElementById('results');

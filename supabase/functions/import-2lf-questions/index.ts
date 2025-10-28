@@ -27,7 +27,7 @@ const CATEGORY_MAPPING: Record<string, { categoryId: string; subjectId: string }
   'Biochemie': { categoryId: '6410a98c-f8d2-4b00-8f7d-1e1d3a371f3f', subjectId: SUBJECT_CHEMISTRY_ID },
   'Obecná chemie': { categoryId: 'f58ff025-d94f-4593-974a-353da0b9d783', subjectId: SUBJECT_CHEMISTRY_ID },
   'Organická chemie': { categoryId: 'a8f5b465-3d9a-4e5b-8cd3-5ffd6f9f0968', subjectId: SUBJECT_CHEMISTRY_ID },
-  'Chemické výpočty': { categoryId: 'f58ff025-d94f-4593-974a-353da0b9d783', subjectId: SUBJECT_CHEMISTRY_ID },
+  'Chemické výpočty': { categoryId: 'd9b81f90-860b-48f9-9c4d-ebe7e1377d56', subjectId: SUBJECT_CHEMISTRY_ID },
 }
 
 interface ParsedQuestion {
