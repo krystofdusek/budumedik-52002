@@ -80,7 +80,7 @@ function parseQuestions(content: string): ParsedQuestion[] {
     if (!line || line.startsWith('#')) continue
     
     // New question starts with number and dot
-    const questionMatch = line.match(/^(\d+)\.\s+(.+)/)
+    const questionMatch = line.match(/^(\d+\.\d+)\s+(.+)/)
     if (questionMatch) {
       // Save previous question if valid
       if (currentQuestion.question_text) {
@@ -88,7 +88,7 @@ function parseQuestions(content: string): ParsedQuestion[] {
       }
       
       currentQuestion = {
-        question_number: parseInt(questionMatch[1]),
+        question_number: parseFloat(questionMatch[1]),
         question_text: questionMatch[2],
         option_a: '',
         option_b: '',
@@ -100,7 +100,7 @@ function parseQuestions(content: string): ParsedQuestion[] {
     }
     
     // Parse options
-    const optionMatch = line.match(/^([a-e])\s*\)\s*(.+)/i)
+    const optionMatch = line.match(/^([a-e])\s*[):]\s*(.+)/i)
     if (optionMatch && currentQuestion) {
       const optionLetter = optionMatch[1].toLowerCase()
       const optionText = optionMatch[2]
