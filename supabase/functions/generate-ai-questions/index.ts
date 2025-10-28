@@ -316,8 +316,14 @@ ${sampleQuestions.map((q: any, i: number) =>
     const systemPrompt = `Jsi expert na tvorbu přijímacích otázek na lékařské fakulty v ČR.
 
 🎓 FAKULTA: ${faculty.name} (${faculty.code})
-- Možnost E: ${faculty.has_option_e ? 'ANO' : 'NE'}
-- Více správných odpovědí: ${faculty.allows_multiple_correct ? 'ANO' : 'NE'}
+
+⚠️ KRITICKÁ PRAVIDLA FAKULTY (MUSÍŠ DODRŽET):
+${faculty.allows_multiple_correct 
+  ? '✓ Tato fakulta POVOLUJE více správných odpovědí (correct_answers může obsahovat A,B,C,D' + (faculty.has_option_e ? ',E' : '') + ')'
+  : '✗ Tato fakulta ZAKAZUJE více správných odpovědí - VŽDY pouze JEDNA správná odpověď (correct_answers musí obsahovat právě 1 písmeno)'}
+${faculty.has_option_e 
+  ? '✓ Tato fakulta MÁ možnost E - použij všech 5 možností (A,B,C,D,E)'
+  : '✗ Tato fakulta NEMÁ možnost E - použij pouze 4 možnosti (A,B,C,D)'}
 
 ${subjectInfo}
 ${categoryInfo}
@@ -344,7 +350,22 @@ ${allIncorrectQuestions.length > 0
 - Použij PODOBNOU STRUKTURU otázky
 - Ale změň konkrétní příklady, čísla, názvy
 - Cílem je procvičit STEJNÉ vědomosti novým způsobem` 
-  : 'Vytvoř vyvážený test pokrývající všechny základní oblasti.'}`;
+  : 'Vytvoř vyvážený test pokrývající všechny základní oblasti.'}
+
+🚨 ABSOLÚTNÍ POŽADAVEK:
+${!faculty.allows_multiple_correct 
+  ? 'correct_answers MUSÍ obsahovat PRÁVĚ JEDNU odpověď (např. ["A"] nebo ["C"]) - NIKDY ne ["A","B"]!'
+  : 'correct_answers může obsahovat více odpovědí pokud je to odůvodněné'}
+${!faculty.has_option_e 
+  ? 'NIKDY nepoužívej option_e - pouze A,B,C,D!'
+  : 'Použij všech 5 možností A,B,C,D,E'}`;
+
+    console.log('System prompt for AI:', {
+      facultyCode: faculty.code,
+      allowsMultipleCorrect: faculty.allows_multiple_correct,
+      hasOptionE: faculty.has_option_e,
+      promptLength: systemPrompt.length
+    });
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -412,14 +433,57 @@ ${allIncorrectQuestions.length > 0
 
     const generatedQuestions = JSON.parse(toolCall.function.arguments).questions;
 
-    console.log(`Generated ${generatedQuestions.length} questions`);
+    console.log(`Generated ${generatedQuestions.length} questions, validating...`);
+
+    // Validate questions against faculty rules
+    const validatedQuestions = generatedQuestions.filter((q: any, index: number) => {
+      const errors: string[] = [];
+      
+      // Check multiple correct answers rule
+      if (!faculty.allows_multiple_correct && q.correct_answers.length > 1) {
+        errors.push(`Question ${index + 1}: Faculty ${faculty.code} does not allow multiple correct answers, but got ${q.correct_answers.length} answers`);
+      }
+      
+      // Check option E rule
+      if (!faculty.has_option_e && q.option_e) {
+        errors.push(`Question ${index + 1}: Faculty ${faculty.code} does not have option E, but option_e was provided`);
+      }
+      
+      if (faculty.has_option_e && !q.option_e) {
+        errors.push(`Question ${index + 1}: Faculty ${faculty.code} requires option E, but option_e is missing`);
+      }
+      
+      // Check that correct_answers are valid
+      const validOptions = faculty.has_option_e ? ['A', 'B', 'C', 'D', 'E'] : ['A', 'B', 'C', 'D'];
+      const invalidAnswers = q.correct_answers.filter((ans: string) => !validOptions.includes(ans));
+      if (invalidAnswers.length > 0) {
+        errors.push(`Question ${index + 1}: Invalid correct answers: ${invalidAnswers.join(', ')}`);
+      }
+      
+      if (errors.length > 0) {
+        console.error('Question validation failed:', errors);
+        return false;
+      }
+      
+      return true;
+    });
+
+    if (validatedQuestions.length === 0) {
+      throw new Error('No valid questions generated - all questions violated faculty rules');
+    }
+
+    if (validatedQuestions.length < generatedQuestions.length) {
+      console.warn(`Filtered out ${generatedQuestions.length - validatedQuestions.length} invalid questions`);
+    }
+
+    console.log(`Validated ${validatedQuestions.length} questions`);
 
     // Distribute questions across subjects and categories
     const questionsToInsert = [];
-    const questionsPerSubject = Math.ceil(count / Math.max(subjects.length, 1));
+    const questionsPerSubject = Math.ceil(validatedQuestions.length / Math.max(subjects.length, 1));
     
-    for (let i = 0; i < generatedQuestions.length; i++) {
-      const q = generatedQuestions[i];
+    for (let i = 0; i < validatedQuestions.length; i++) {
+      const q = validatedQuestions[i];
       
       // Distribute across subjects if multiple
       const subjectIndex = subjects.length > 1 ? Math.floor(i / questionsPerSubject) % subjects.length : 0;
