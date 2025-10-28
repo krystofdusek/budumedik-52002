@@ -149,10 +149,45 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
     )
+
+    // Verify user is authenticated
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Check if user is admin
+    const { data: roleData, error: roleError } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single()
+
+    if (roleError || !roleData) {
+      console.log('Admin check failed:', roleError)
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const { fileContents } = await req.json()
     
@@ -160,10 +195,29 @@ serve(async (req) => {
       throw new Error('Invalid request: fileContents array is required')
     }
 
+    // Input validation: limit number of files and content size
+    if (fileContents.length > 50) {
+      throw new Error('Too many files: maximum 50 files per import')
+    }
+
     const results = []
     
     for (const fileData of fileContents) {
       const { content, categoryName } = fileData
+      
+      // Input validation
+      if (!content || typeof content !== 'string') {
+        results.push({ category: categoryName, error: 'Invalid content' })
+        continue
+      }
+      if (content.length > 10_000_000) { // 10MB limit
+        results.push({ category: categoryName, error: 'Content too large (max 10MB)' })
+        continue
+      }
+      if (!categoryName || typeof categoryName !== 'string') {
+        results.push({ category: categoryName, error: 'Invalid category name' })
+        continue
+      }
       
       console.log('Received categoryName:', categoryName, 'Type:', typeof categoryName)
       console.log('Available keys:', Object.keys(CATEGORY_MAPPING))

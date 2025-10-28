@@ -4,7 +4,7 @@ project_id = "jcabdfmvjblzulnvvuso"
 verify_jwt = true
 
 [functions.import-2lf-questions]
-verify_jwt = false
+verify_jwt = true
 
 [functions.import-3lf-chemistry]
-verify_jwt = false
+verify_jwt = true
