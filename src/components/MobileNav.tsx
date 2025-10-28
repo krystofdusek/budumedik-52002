@@ -77,7 +77,7 @@ export function MobileNav({ isAdmin = false }: MobileNavProps) {
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                         isActive
-                          ? "bg-blue-500 text-white"
+                          ? "bg-blue-500/20"
                           : "hover:bg-muted"
                       }`
                     }
@@ -99,7 +99,7 @@ export function MobileNav({ isAdmin = false }: MobileNavProps) {
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                           isActive
-                            ? "bg-blue-500 text-white"
+                            ? "bg-blue-500/20"
                             : "hover:bg-muted"
                         }`
                       }
