@@ -105,9 +105,19 @@ export default function AdminQuestions() {
     }
   }, [formData.subject_id]);
 
+  useEffect(() => {
+    if (filterSubject && filterSubject !== 'all') {
+      loadCategoriesForFilter(filterSubject);
+    } else {
+      // Load all categories when no subject filter is selected
+      loadAllCategories();
+    }
+  }, [filterSubject]);
+
   const loadData = async () => {
     const { data: subjectsData } = await supabase.from('subjects').select('*');
     const { data: facultiesData } = await supabase.from('faculties').select('*');
+    const { data: categoriesData } = await supabase.from('categories').select('*');
     const { data: questionsData } = await supabase
       .from('questions')
       .select(`
@@ -120,6 +130,7 @@ export default function AdminQuestions() {
 
     setSubjects(subjectsData || []);
     setFaculties(sortFacultiesByCity(facultiesData || []));
+    setCategories(categoriesData || []);
     setQuestions(questionsData || []);
   };
 
@@ -130,6 +141,25 @@ export default function AdminQuestions() {
       .eq('subject_id', subjectId);
     
     setCategories(data || []);
+  };
+
+  const loadAllCategories = async () => {
+    const { data } = await supabase
+      .from('categories')
+      .select('*');
+    
+    setCategories(data || []);
+  };
+
+  const loadCategoriesForFilter = async (subjectId: string) => {
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('subject_id', subjectId);
+    
+    setCategories(data || []);
+    // Reset category filter when subject changes
+    setFilterCategory('all');
   };
 
   // Filter questions based on selected filters
