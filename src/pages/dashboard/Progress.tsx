@@ -5,7 +5,6 @@ import { TrendingUp, Target, Award, Users, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-
 type SubjectStats = {
   subjectName: string;
   totalQuestions: number;
@@ -13,7 +12,6 @@ type SubjectStats = {
   successRate: number;
   favoriteCount: number;
 };
-
 type FacultyComparison = {
   yourSuccessRate: number;
   facultyAverage: number;
@@ -23,7 +21,6 @@ type FacultyComparison = {
     facultyRate: number;
   }[];
 };
-
 export default function Progress() {
   const [stats, setStats] = useState({
     totalQuestions: 0,
@@ -34,28 +31,24 @@ export default function Progress() {
   const [subjectStats, setSubjectStats] = useState<SubjectStats[]>([]);
   const [facultyComparison, setFacultyComparison] = useState<FacultyComparison | null>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     loadProgress();
   }, []);
-
   const loadProgress = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Load user statistics
-      const { data: userStats } = await supabase
-        .from('user_statistics')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
+      const {
+        data: userStats
+      } = await supabase.from('user_statistics').select('*').eq('user_id', user.id).single();
       if (userStats) {
-        const successRate = userStats.total_questions_answered > 0
-          ? (userStats.total_correct_answers / userStats.total_questions_answered) * 100
-          : 0;
-
+        const successRate = userStats.total_questions_answered > 0 ? userStats.total_correct_answers / userStats.total_questions_answered * 100 : 0;
         setStats({
           totalQuestions: userStats.total_questions_answered,
           totalTests: userStats.total_tests_completed,
@@ -65,41 +58,45 @@ export default function Progress() {
       }
 
       // Load subject-specific stats
-      const { data: answers } = await supabase
-        .from('user_answers')
-        .select(`
+      const {
+        data: answers
+      } = await supabase.from('user_answers').select(`
           is_correct,
           questions!inner(
             id,
             subject_id,
             subjects!inner(name)
           )
-        `)
-        .eq('user_id', user.id);
+        `).eq('user_id', user.id);
 
       // Load favorite questions
-      const { data: favorites } = await supabase
-        .from('favorite_questions')
-        .select(`
+      const {
+        data: favorites
+      } = await supabase.from('favorite_questions').select(`
           question_id,
           questions!inner(
             subject_id,
             subjects!inner(name)
           )
-        `)
-        .eq('user_id', user.id);
-
+        `).eq('user_id', user.id);
       if (answers) {
-        const subjectMap: Record<string, { correct: number; total: number; name: string; favorites: number }> = {};
-        
+        const subjectMap: Record<string, {
+          correct: number;
+          total: number;
+          name: string;
+          favorites: number;
+        }> = {};
         answers.forEach((answer: any) => {
           const subjectId = answer.questions.subject_id;
           const subjectName = answer.questions.subjects.name;
-          
           if (!subjectMap[subjectId]) {
-            subjectMap[subjectId] = { correct: 0, total: 0, name: subjectName, favorites: 0 };
+            subjectMap[subjectId] = {
+              correct: 0,
+              total: 0,
+              name: subjectName,
+              favorites: 0
+            };
           }
-          
           subjectMap[subjectId].total++;
           if (answer.is_correct) {
             subjectMap[subjectId].correct++;
@@ -111,62 +108,56 @@ export default function Progress() {
           favorites.forEach((fav: any) => {
             const subjectId = fav.questions.subject_id;
             const subjectName = fav.questions.subjects.name;
-            
             if (!subjectMap[subjectId]) {
-              subjectMap[subjectId] = { correct: 0, total: 0, name: subjectName, favorites: 0 };
+              subjectMap[subjectId] = {
+                correct: 0,
+                total: 0,
+                name: subjectName,
+                favorites: 0
+              };
             }
-            
             subjectMap[subjectId].favorites++;
           });
         }
-
         const subjectStatsData: SubjectStats[] = Object.values(subjectMap).map(stat => ({
           subjectName: stat.name,
           totalQuestions: stat.total,
           correctAnswers: stat.correct,
-          successRate: stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0,
+          successRate: stat.total > 0 ? Math.round(stat.correct / stat.total * 100) : 0,
           favoriteCount: stat.favorites
         }));
-
         setSubjectStats(subjectStatsData);
       }
 
       // Load faculty comparison
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('favorite_faculty_id')
-        .eq('id', user.id)
-        .single();
-
+      const {
+        data: profile
+      } = await supabase.from('profiles').select('favorite_faculty_id').eq('id', user.id).single();
       if (profile?.favorite_faculty_id) {
         await loadFacultyComparison(user.id, profile.favorite_faculty_id);
       }
-
     } catch (error) {
       console.error('Error loading progress:', error);
     } finally {
       setLoading(false);
     }
   };
-
   const loadFacultyComparison = async (userId: string, facultyId: string) => {
     try {
-      const { data, error } = await supabase.rpc('get_faculty_comparison', {
+      const {
+        data,
+        error
+      } = await supabase.rpc('get_faculty_comparison', {
         p_user_id: userId,
         p_faculty_id: facultyId
       });
-
       if (error) {
         console.error('Error loading faculty comparison:', error);
         return;
       }
-
       if (data && data.length > 0) {
         const result = data[0];
-        const subjectComparisons = typeof result.subject_comparisons === 'string' 
-          ? JSON.parse(result.subject_comparisons)
-          : result.subject_comparisons;
-          
+        const subjectComparisons = typeof result.subject_comparisons === 'string' ? JSON.parse(result.subject_comparisons) : result.subject_comparisons;
         setFacultyComparison({
           yourSuccessRate: result.your_success_rate || 0,
           facultyAverage: result.faculty_average || 0,
@@ -177,9 +168,7 @@ export default function Progress() {
       console.error('Error in loadFacultyComparison:', error);
     }
   };
-
-  return (
-    <SidebarProvider>
+  return <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <main className="flex-1 p-8 bg-muted/50">
@@ -191,12 +180,9 @@ export default function Progress() {
               </p>
             </div>
 
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
+            {loading ? <div className="text-center py-8 text-muted-foreground">
                 Načítání...
-              </div>
-            ) : (
-              <>
+              </div> : <>
                 <div className="grid md:grid-cols-3 gap-6">
                   <Card>
                     <CardHeader>
@@ -229,8 +215,7 @@ export default function Progress() {
                   </Card>
                 </div>
 
-                {subjectStats.length > 0 && (
-                  <>
+                {subjectStats.length > 0 && <>
                     <Card>
                       <CardHeader>
                         <CardTitle>Úspěšnost podle předmětů</CardTitle>
@@ -252,63 +237,10 @@ export default function Progress() {
                       </CardContent>
                     </Card>
 
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Počet pokusů podle předmětů</CardTitle>
-                          <CardDescription>
-                            Celkový počet zodpovězených otázek
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={subjectStats}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="subjectName" />
-                              <YAxis />
-                              <Tooltip />
-                              <Legend />
-                              <Bar dataKey="totalQuestions" fill="hsl(var(--chart-1))" name="Celkem otázek" />
-                              <Bar dataKey="correctAnswers" fill="hsl(var(--chart-2))" name="Správné odpovědi" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </CardContent>
-                      </Card>
+                    
+                  </>}
 
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Oblíbené otázky podle předmětů</CardTitle>
-                          <CardDescription>
-                            Počet otázek, které jste si oblíbili
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                              <Pie
-                                data={subjectStats}
-                                dataKey="favoriteCount"
-                                nameKey="subjectName"
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={80}
-                                label={(entry) => `${entry.subjectName}: ${entry.favoriteCount}`}
-                              >
-                                {subjectStats.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
-                                ))}
-                              </Pie>
-                              <Tooltip />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </>
-                )}
-
-                {facultyComparison && (
-                  <Card>
+                {facultyComparison && <Card>
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
@@ -334,12 +266,10 @@ export default function Progress() {
                         </div>
                       </div>
 
-                      {facultyComparison.subjectComparison.length > 0 && (
-                        <div>
+                      {facultyComparison.subjectComparison.length > 0 && <div>
                           <h4 className="font-semibold mb-4">Porovnání podle předmětů</h4>
                           <div className="space-y-4">
-                            {facultyComparison.subjectComparison.map((subject) => (
-                              <div key={subject.subjectName}>
+                            {facultyComparison.subjectComparison.map(subject => <div key={subject.subjectName}>
                                 <div className="flex justify-between mb-2">
                                   <span className="font-medium">{subject.subjectName}</span>
                                   <div className="flex gap-4 text-sm">
@@ -351,31 +281,24 @@ export default function Progress() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-primary" 
-                                      style={{ width: `${subject.yourRate}%` }} 
-                                    />
+                                    <div className="h-full bg-primary" style={{
+                            width: `${subject.yourRate}%`
+                          }} />
                                   </div>
                                   <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-muted-foreground" 
-                                      style={{ width: `${subject.facultyRate}%` }} 
-                                    />
+                                    <div className="h-full bg-muted-foreground" style={{
+                            width: `${subject.facultyRate}%`
+                          }} />
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              </div>)}
                           </div>
-                        </div>
-                      )}
+                        </div>}
                     </CardContent>
-                  </Card>
-                )}
-              </>
-            )}
+                  </Card>}
+              </>}
           </div>
         </main>
       </div>
-    </SidebarProvider>
-  );
+    </SidebarProvider>;
 }
