@@ -46,10 +46,10 @@ export default function AdminQuestions() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
   // Filter states
-  const [filterSubject, setFilterSubject] = useState<string>('');
-  const [filterCategory, setFilterCategory] = useState<string>('');
-  const [filterFaculty, setFilterFaculty] = useState<string>('');
-  const [filterYear, setFilterYear] = useState<string>('');
+  const [filterSubject, setFilterSubject] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterFaculty, setFilterFaculty] = useState<string>('all');
+  const [filterYear, setFilterYear] = useState<string>('all');
   const [searchText, setSearchText] = useState<string>('');
 
   const [formData, setFormData] = useState({
@@ -134,10 +134,10 @@ export default function AdminQuestions() {
 
   // Filter questions based on selected filters
   const filteredQuestions = questions.filter((q) => {
-    if (filterSubject && q.subject_id !== filterSubject) return false;
-    if (filterCategory && q.category_id !== filterCategory) return false;
-    if (filterFaculty && q.faculty_id !== filterFaculty) return false;
-    if (filterYear && q.year?.toString() !== filterYear) return false;
+    if (filterSubject && filterSubject !== 'all' && q.subject_id !== filterSubject) return false;
+    if (filterCategory && filterCategory !== 'all' && q.category_id !== filterCategory) return false;
+    if (filterFaculty && filterFaculty !== 'all' && q.faculty_id !== filterFaculty) return false;
+    if (filterYear && filterYear !== 'all' && q.year?.toString() !== filterYear) return false;
     if (searchText && !q.question_text.toLowerCase().includes(searchText.toLowerCase())) return false;
     return true;
   });
@@ -453,7 +453,7 @@ export default function AdminQuestions() {
                           <SelectValue placeholder="Všechny předměty" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Všechny předměty</SelectItem>
+                          <SelectItem value="all">Všechny předměty</SelectItem>
                           {subjects.map(s => (
                             <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                           ))}
@@ -468,7 +468,7 @@ export default function AdminQuestions() {
                           <SelectValue placeholder="Všechny kategorie" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Všechny kategorie</SelectItem>
+                          <SelectItem value="all">Všechny kategorie</SelectItem>
                           {categories.map(c => (
                             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                           ))}
@@ -483,7 +483,7 @@ export default function AdminQuestions() {
                           <SelectValue placeholder="Všechny fakulty" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Všechny fakulty</SelectItem>
+                          <SelectItem value="all">Všechny fakulty</SelectItem>
                           {faculties.map(f => (
                             <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
                           ))}
@@ -500,7 +500,7 @@ export default function AdminQuestions() {
                           <SelectValue placeholder="Všechny roky" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Všechny roky</SelectItem>
+                          <SelectItem value="all">Všechny roky</SelectItem>
                           {availableYears.map(year => (
                             <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                           ))}
@@ -518,15 +518,15 @@ export default function AdminQuestions() {
                     </div>
                   </div>
 
-                  {(filterSubject || filterCategory || filterFaculty || filterYear || searchText) && (
+                  {(filterSubject && filterSubject !== 'all' || filterCategory && filterCategory !== 'all' || filterFaculty && filterFaculty !== 'all' || filterYear && filterYear !== 'all' || searchText) && (
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => {
-                        setFilterSubject('');
-                        setFilterCategory('');
-                        setFilterFaculty('');
-                        setFilterYear('');
+                        setFilterSubject('all');
+                        setFilterCategory('all');
+                        setFilterFaculty('all');
+                        setFilterYear('all');
                         setSearchText('');
                       }}
                     >
