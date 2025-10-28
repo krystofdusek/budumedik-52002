@@ -9,16 +9,16 @@ import { Upload, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const FILE_MAPPINGS = [
-  { path: 'user-uploads://2LF_-_Biologie_člověka.md', category: 'Biologie člověka' },
-  { path: 'user-uploads://2LF_-_Biologie_rostlin_a_hub.md', category: 'Biologie rostlin a hub' },
-  { path: 'user-uploads://2LF_-_Biologie_živočichů.md', category: 'Biologie živočichů' },
-  { path: 'user-uploads://2LF_-_Buněčná_biologie.md', category: 'Buněčná biologie' },
-  { path: 'user-uploads://2LF_-_Ekologie.md', category: 'Ekologie' },
-  { path: 'user-uploads://2LF_-_Evoluční_biologie.md', category: 'Evoluční biologie' },
-  { path: 'user-uploads://2LF_-_Molekulární_biologie.md', category: 'Molekulární biologie' },
-  { path: 'user-uploads://2LF_-_Obecná_a_populační_genetika.md', category: 'Obecná a populační genetika' },
-  { path: 'user-uploads://2LF_-_Úvod_do_biologie.md', category: 'Úvod do biologie' },
-  { path: 'user-uploads://2LF_-_Historie_medicíny.md', category: 'Historie medicíny' }
+  { path: '/data/2lf/Biologie_člověka.md', category: 'Biologie člověka' },
+  { path: '/data/2lf/Biologie_rostlin_a_hub.md', category: 'Biologie rostlin a hub' },
+  { path: '/data/2lf/Biologie_živočichů.md', category: 'Biologie živočichů' },
+  { path: '/data/2lf/Buněčná_biologie.md', category: 'Buněčná biologie' },
+  { path: '/data/2lf/Ekologie.md', category: 'Ekologie' },
+  { path: '/data/2lf/Evoluční_biologie.md', category: 'Evoluční biologie' },
+  { path: '/data/2lf/Molekulární_biologie.md', category: 'Molekulární biologie' },
+  { path: '/data/2lf/Obecná_a_populační_genetika.md', category: 'Obecná a populační genetika' },
+  { path: '/data/2lf/Úvod_do_biologie.md', category: 'Úvod do biologie' },
+  { path: '/data/2lf/Historie_medicíny.md', category: 'Historie medicíny' }
 ];
 
 export default function AdminImport() {
@@ -62,7 +62,7 @@ export default function AdminImport() {
       setStatus("Import dokončen!");
       toast({
         title: "Import úspěšný",
-        description: `Importováno otázek celkem: ${data.results?.reduce((sum: number, r: any) => sum + (r.imported || 0), 0) || 0}`,
+        description: `Importováno otázek celkem: ${data.results?.reduce((sum: number, r: any) => sum + (r.questionsImported || 0), 0) || 0}`,
       });
     } catch (error: any) {
       console.error('Import error:', error);
@@ -141,7 +141,7 @@ export default function AdminImport() {
                               <p className="text-sm text-destructive">{r.error}</p>
                             ) : (
                               <p className="text-sm text-muted-foreground">
-                                Importováno: {r.imported} otázek
+                                Importováno: {r.questionsImported} otázek
                               </p>
                             )}
                           </div>
