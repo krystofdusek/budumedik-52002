@@ -58,15 +58,46 @@ serve(async (req) => {
 
     console.log(`AI question generation initiated by admin: ${user.id}`);
 
-    // Fetch user's weak areas (categories with low success rate)
-    const { data: userAnswers } = await supabase
+    // Fetch user's profile to get favorite faculty
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('favorite_faculty_id')
+      .eq('id', user.id)
+      .single();
+
+    const userFavoriteFacultyId = profile?.favorite_faculty_id || facultyId;
+
+    // Fetch user's answers specifically for their favorite faculty and selected filters
+    let userAnswersQuery = supabase
       .from('user_answers')
       .select(`
         is_correct,
+        selected_answers,
         question_id,
-        questions!inner(category_id, subject_id, faculty_id)
+        questions!inner(
+          category_id,
+          subject_id,
+          faculty_id,
+          question_text,
+          correct_answers,
+          categories!inner(name),
+          subjects!inner(name)
+        )
       `)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('questions.faculty_id', userFavoriteFacultyId);
+
+    // Apply subject filter if provided
+    if (subjectId) {
+      userAnswersQuery = userAnswersQuery.eq('questions.subject_id', subjectId);
+    }
+
+    // Apply category filter if provided
+    if (categoryId) {
+      userAnswersQuery = userAnswersQuery.eq('questions.category_id', categoryId);
+    }
+
+    const { data: userAnswers } = await userAnswersQuery;
 
     // Fetch faculty details (required)
     const { data: faculty } = await supabase
@@ -133,22 +164,66 @@ serve(async (req) => {
       sampleQuestionsQuery = sampleQuestionsQuery.eq('category_id', categoryId);
     }
 
-    const { data: sampleQuestions } = await sampleQuestionsQuery.limit(1);
+    const { data: sampleQuestions } = await sampleQuestionsQuery.limit(5);
 
-    // Calculate weak areas
-    const categoryStats: Record<string, { correct: number; total: number }> = {};
+    // Analyze user's performance and identify weak areas
+    const incorrectAnswers: any[] = [];
+    const categoryStats: Record<string, { 
+      correct: number; 
+      total: number; 
+      categoryName: string;
+      subjectName: string;
+      examples: string[];
+    }> = {};
+    
     userAnswers?.forEach((answer: any) => {
       const catId = answer.questions.category_id;
+      const catName = answer.questions.categories.name;
+      const subjectName = answer.questions.subjects.name;
+      
       if (!categoryStats[catId]) {
-        categoryStats[catId] = { correct: 0, total: 0 };
+        categoryStats[catId] = { 
+          correct: 0, 
+          total: 0,
+          categoryName: catName,
+          subjectName: subjectName,
+          examples: []
+        };
       }
+      
       categoryStats[catId].total++;
-      if (answer.is_correct) categoryStats[catId].correct++;
+      if (answer.is_correct) {
+        categoryStats[catId].correct++;
+      } else {
+        // Store examples of questions user got wrong
+        if (categoryStats[catId].examples.length < 3) {
+          categoryStats[catId].examples.push(answer.questions.question_text);
+        }
+        incorrectAnswers.push(answer);
+      }
     });
 
-    const weakAreas = Object.entries(categoryStats)
-      .filter(([_, stats]) => stats.total > 0 && stats.correct / stats.total < 0.7)
-      .map(([catId]) => catId);
+    // Check if user has historical data for personalization
+    const hasHistoricalData = userAnswers && userAnswers.length > 0;
+    const totalAnswered = userAnswers?.length || 0;
+
+    // Calculate weak categories (< 70% success rate and at least 3 answers)
+    const weakCategories = Object.entries(categoryStats)
+      .filter(([_, stats]) => stats.total >= 3 && stats.correct / stats.total < 0.7)
+      .map(([catId, stats]) => ({
+        id: catId,
+        name: stats.categoryName,
+        subject: stats.subjectName,
+        successRate: Math.round((stats.correct / stats.total) * 100),
+        exampleErrors: stats.examples
+      }));
+
+    console.log(`User performance analysis:`, {
+      totalAnswered,
+      hasHistoricalData,
+      weakCategoriesCount: weakCategories.length,
+      categories: Object.keys(categoryStats).length
+    });
 
     // Create AI prompt
     let subjectInfo = '';
@@ -177,27 +252,72 @@ serve(async (req) => {
       }
     }
 
+    // Build personalization context
+    let personalizationContext = '';
+    if (hasHistoricalData && weakCategories.length > 0) {
+      personalizationContext = `\n\n📊 PERSONALIZACE PRO UŽIVATELE:
+Uživatel absolvoval ${totalAnswered} otázek pro ${faculty.name}.
+
+🎯 SLABÉ STRÁNKY (zaměř se na tyto oblasti):
+${weakCategories.map((cat, i) => 
+  `${i+1}. ${cat.subject} - ${cat.name} (${cat.successRate}% úspěšnost)
+   Příklady otázek, které uživatel nezodpověděl správně:
+   ${cat.exampleErrors.map((q, j) => `   ${j+1}. ${q.substring(0, 100)}...`).join('\n')}`
+).join('\n\n')}
+
+⚠️ Vytvoř otázky, které PŘÍMO TESTUJÍ tyto slabé oblasti!`;
+    } else if (hasHistoricalData && weakCategories.length === 0) {
+      personalizationContext = `\n\n✅ Uživatel má dobrou úspěšnost ve všech dosavadních kategoriích (${totalAnswered} zodpovězených otázek).
+Vytvoř balanced test pokrývající všechny důležité oblasti.`;
+    } else {
+      personalizationContext = `\n\n⚡ PRVNÍ TEST PRO UŽIVATELE - žádná historická data.
+Test bude generován bez personalizace. Pokrýt všechny základní oblasti rovnoměrně.`;
+    }
+
+    // Add historical questions context
+    let historicalContext = '';
+    if (sampleQuestions && sampleQuestions.length > 0) {
+      historicalContext = `\n\n📚 PŘÍKLADY SKUTEČNÝCH OTÁZEK Z ${faculty.name}:
+${sampleQuestions.map((q: any, i: number) => 
+  `${i+1}. ${q.question_text}
+   A) ${q.option_a}
+   B) ${q.option_b}
+   C) ${q.option_c}
+   D) ${q.option_d}
+   ${q.option_e ? `E) ${q.option_e}` : ''}
+   Správně: ${q.correct_answers.join(', ')}
+   ${q.explanation ? `Vysvětlení: ${q.explanation}` : ''}`
+).join('\n\n')}
+
+🎓 TVŮJ ÚKOL: Vytvoř otázky v PODOBNÉM STYLU a OBTÍŽNOSTI jako výše uvedené příklady.`;
+    }
+
     const systemPrompt = `Jsi expert na tvorbu přijímacích otázek na lékařské fakulty v ČR.
 
-FAKULTA: ${faculty.name} (${faculty.code})
+🎓 FAKULTA: ${faculty.name} (${faculty.code})
 - Možnost E: ${faculty.has_option_e ? 'ANO' : 'NE'}
-- Více správných: ${faculty.allows_multiple_correct ? 'ANO' : 'NE'}
+- Více správných odpovědí: ${faculty.allows_multiple_correct ? 'ANO' : 'NE'}
 
 ${subjectInfo}
 ${categoryInfo}
 
 ${subjects.some(s => s.name === 'Fyzika') && (faculty.code === '3LF' || faculty.code === 'LFHK') ? 
-  'DŮLEŽITÉ: Fyzika - náročné výpočty a příklady.' : ''}
+  '⚗️ DŮLEŽITÉ: Fyzika - náročné výpočty a aplikované příklady.' : ''}
 
 ${!subjectId && !categoryId ? 
-  'DŮLEŽITÉ: Rovnoměrně distribuuj otázky mezi všechny předměty a kategorie.' : ''}
+  '📋 DŮLEŽITÉ: Rovnoměrně distribuuj otázky mezi všechny předměty a kategorie.' : ''}
+${personalizationContext}
+${historicalContext}
 
-Vytvoř ${count} originálních otázek:
-- Autentické, odpovídající reálným přijímačkám
-- S vysvětlením správné odpovědi
-- Vhodné obtížnosti pro medicínu
+✨ VYTVOŘ ${count} ORIGINÁLNÍCH OTÁZEK:
+- Autentické, odpovídající reálným přijímacím zkouškám
+- S jasným vysvětlením správné odpovědi
+- Vhodné obtížnosti pro medicínské studium
+- Zaměřené na identifikované slabé stránky uživatele
 ${!subjectId ? '- Rovnoměrně mezi předměty' : ''}
-${!categoryId && subjectId ? '- Rovnoměrně mezi kategorie' : ''}`;
+${!categoryId && subjectId ? '- Rovnoměrně mezi kategorie předmětu' : ''}
+
+🎯 KLÍČOVÉ: Pokud má uživatel slabé stránky, vytvoř otázky PŘÍMO testující tyto oblasti!`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -338,7 +458,13 @@ ${!categoryId && subjectId ? '- Rovnoměrně mezi kategorie' : ''}`;
     console.log(`Inserted ${insertedQuestions.length} AI questions into database`);
 
     return new Response(
-      JSON.stringify({ questions: insertedQuestions }),
+      JSON.stringify({ 
+        questions: insertedQuestions,
+        hasHistoricalData,
+        personalized: weakCategories.length > 0,
+        weakAreasCount: weakCategories.length,
+        totalAnswered
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 

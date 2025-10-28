@@ -153,6 +153,21 @@ export default function TestGenerators() {
         setLoading(false);
         return;
       }
+
+      // Show personalization info
+      if (!data.hasHistoricalData || !data.personalized) {
+        toast({
+          title: "Test bez personalizace",
+          description: `Nemáte žádná historická data pro vybrané filtry (${data.totalAnswered || 0} zodpovězených otázek). Test bude vygenerován bez personalizace.`,
+          variant: "default"
+        });
+      } else if (data.personalized && data.weakAreasCount > 0) {
+        toast({
+          title: "✨ Personalizovaný test vytvořen",
+          description: `Test zaměřený na ${data.weakAreasCount} slabých oblastí z ${data.totalAnswered} zodpovězených otázek`,
+        });
+      }
+
       navigate('/test', {
         state: {
           questions: data.questions,
