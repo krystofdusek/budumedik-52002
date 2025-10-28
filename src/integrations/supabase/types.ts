@@ -225,7 +225,6 @@ export type Database = {
           question_text: string
           subject_id: string
           updated_at: string
-          year: number | null
         }
         Insert: {
           category_id: string
@@ -244,7 +243,6 @@ export type Database = {
           question_text: string
           subject_id: string
           updated_at?: string
-          year?: number | null
         }
         Update: {
           category_id?: string
@@ -263,7 +261,6 @@ export type Database = {
           question_text?: string
           subject_id?: string
           updated_at?: string
-          year?: number | null
         }
         Relationships: [
           {

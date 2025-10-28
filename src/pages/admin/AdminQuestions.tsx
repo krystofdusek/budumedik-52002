@@ -29,8 +29,7 @@ const questionSchema = z.object({
   explanation: z.string().max(2000, "Vysvětlení může mít maximálně 2000 znaků").optional(),
   subject_id: z.string().uuid("Neplatné ID předmětu"),
   category_id: z.string().uuid("Neplatné ID kategorie"),
-  faculty_id: z.string().uuid("Neplatné ID fakulty"),
-  year: z.number().int().min(2000, "Rok musí být minimálně 2000").max(new Date().getFullYear() + 1, "Rok nemůže být v budoucnosti")
+  faculty_id: z.string().uuid("Neplatné ID fakulty")
 });
 
 export default function AdminQuestions() {
@@ -44,12 +43,14 @@ export default function AdminQuestions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [editingQuestion, setEditingQuestion] = useState<any>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState<any>(null);
   
   // Filter states
   const [filterSubject, setFilterSubject] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterFaculty, setFilterFaculty] = useState<string>('all');
-  const [filterYear, setFilterYear] = useState<string>('all');
   const [searchText, setSearchText] = useState<string>('');
 
   const [formData, setFormData] = useState({
@@ -63,8 +64,7 @@ export default function AdminQuestions() {
     explanation: '',
     subject_id: '',
     category_id: '',
-    faculty_id: '',
-    year: new Date().getFullYear()
+    faculty_id: ''
   });
 
   useEffect(() => {
@@ -185,13 +185,9 @@ export default function AdminQuestions() {
     if (filterSubject && filterSubject !== 'all' && q.subject_id !== filterSubject) return false;
     if (filterCategory && filterCategory !== 'all' && q.category_id !== filterCategory) return false;
     if (filterFaculty && filterFaculty !== 'all' && q.faculty_id !== filterFaculty) return false;
-    if (filterYear && filterYear !== 'all' && q.year?.toString() !== filterYear) return false;
     if (searchText && !q.question_text.toLowerCase().includes(searchText.toLowerCase())) return false;
     return true;
   });
-
-  // Get unique years from questions
-  const availableYears = Array.from(new Set(questions.map(q => q.year).filter(Boolean))).sort((a, b) => b - a);
 
   const handleCheckboxChange = (option: string, checked: boolean) => {
     setFormData({
@@ -215,29 +211,56 @@ export default function AdminQuestions() {
         explanation: formData.explanation || undefined
       });
 
-      const { error } = await supabase
-        .from('questions')
-        .insert([{
-          question_text: validated.question_text,
-          option_a: validated.option_a,
-          option_b: validated.option_b,
-          option_c: validated.option_c,
-          option_d: validated.option_d,
-          option_e: validated.option_e || null,
-          correct_answers: validated.correct_answers,
-          explanation: validated.explanation || null,
-          subject_id: validated.subject_id,
-          category_id: validated.category_id,
-          faculty_id: validated.faculty_id,
-          year: validated.year
-        }]);
+      if (editingQuestion) {
+        // Update existing question
+        const { error } = await supabase
+          .from('questions')
+          .update({
+            question_text: validated.question_text,
+            option_a: validated.option_a,
+            option_b: validated.option_b,
+            option_c: validated.option_c,
+            option_d: validated.option_d,
+            option_e: validated.option_e || null,
+            correct_answers: validated.correct_answers,
+            explanation: validated.explanation || null,
+            subject_id: validated.subject_id,
+            category_id: validated.category_id,
+            faculty_id: validated.faculty_id
+          })
+          .eq('id', editingQuestion.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Úspěch",
-        description: "Otázka byla přidána"
-      });
+        toast({
+          title: "Úspěch",
+          description: "Otázka byla upravena"
+        });
+      } else {
+        // Insert new question
+        const { error } = await supabase
+          .from('questions')
+          .insert([{
+            question_text: validated.question_text,
+            option_a: validated.option_a,
+            option_b: validated.option_b,
+            option_c: validated.option_c,
+            option_d: validated.option_d,
+            option_e: validated.option_e || null,
+            correct_answers: validated.correct_answers,
+            explanation: validated.explanation || null,
+            subject_id: validated.subject_id,
+            category_id: validated.category_id,
+            faculty_id: validated.faculty_id
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Úspěch",
+          description: "Otázka byla přidána"
+        });
+      }
 
       setDialogOpen(false);
       resetForm();
@@ -308,10 +331,33 @@ export default function AdminQuestions() {
       explanation: '',
       subject_id: '',
       category_id: '',
-      faculty_id: '',
-      year: new Date().getFullYear()
+      faculty_id: ''
     });
     setValidationErrors({});
+    setEditingQuestion(null);
+  };
+
+  const handleEditQuestion = (question: any) => {
+    setEditingQuestion(question);
+    setFormData({
+      question_text: question.question_text,
+      option_a: question.option_a,
+      option_b: question.option_b,
+      option_c: question.option_c,
+      option_d: question.option_d,
+      option_e: question.option_e || '',
+      correct_answers: question.correct_answers,
+      explanation: question.explanation || '',
+      subject_id: question.subject_id,
+      category_id: question.category_id,
+      faculty_id: question.faculty_id
+    });
+    setDialogOpen(true);
+  };
+
+  const handleViewQuestion = (question: any) => {
+    setSelectedQuestion(question);
+    setViewDialogOpen(true);
   };
 
   if (!isAdmin) {
@@ -340,7 +386,10 @@ export default function AdminQuestions() {
                 </p>
               </div>
               
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <Dialog open={dialogOpen} onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) resetForm();
+              }}>
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
@@ -349,7 +398,7 @@ export default function AdminQuestions() {
                 </DialogTrigger>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Přidat novou otázku</DialogTitle>
+                    <DialogTitle>{editingQuestion ? 'Upravit otázku' : 'Přidat novou otázku'}</DialogTitle>
                     <DialogDescription>
                       Vyplňte všechny informace o otázce
                     </DialogDescription>
@@ -413,15 +462,6 @@ export default function AdminQuestions() {
                     </div>
 
                     <div>
-                      <Label>Rok</Label>
-                      <Input
-                        type="number"
-                        value={formData.year}
-                        onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                      />
-                    </div>
-
-                    <div>
                       <Label>Znění otázky *</Label>
                       <Textarea
                         value={formData.question_text}
@@ -476,7 +516,7 @@ export default function AdminQuestions() {
                     )}
 
                     <Button type="submit" disabled={loading}>
-                      {loading ? 'Přidávání...' : 'Přidat otázku'}
+                      {loading ? (editingQuestion ? 'Ukládání...' : 'Přidávání...') : (editingQuestion ? 'Uložit změny' : 'Přidat otázku')}
                     </Button>
                   </form>
                 </DialogContent>
@@ -540,22 +580,7 @@ export default function AdminQuestions() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Rok</Label>
-                      <Select value={filterYear} onValueChange={setFilterYear}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Všechny roky" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Všechny roky</SelectItem>
-                          {availableYears.map(year => (
-                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label>Hledat v textu otázky</Label>
                       <Input
@@ -566,7 +591,7 @@ export default function AdminQuestions() {
                     </div>
                   </div>
 
-                  {(filterSubject && filterSubject !== 'all' || filterCategory && filterCategory !== 'all' || filterFaculty && filterFaculty !== 'all' || filterYear && filterYear !== 'all' || searchText) && (
+                  {(filterSubject && filterSubject !== 'all' || filterCategory && filterCategory !== 'all' || filterFaculty && filterFaculty !== 'all' || searchText) && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -574,7 +599,6 @@ export default function AdminQuestions() {
                         setFilterSubject('all');
                         setFilterCategory('all');
                         setFilterFaculty('all');
-                        setFilterYear('all');
                         setSearchText('');
                       }}
                     >
@@ -591,7 +615,7 @@ export default function AdminQuestions() {
                     {filteredQuestions.map((q) => (
                       <Card key={q.id}>
                         <CardContent className="pt-6">
-                          <div className="flex justify-between items-start">
+                          <div className="flex justify-between items-start gap-4">
                             <div className="flex-1">
                               <p className="font-semibold mb-2">{q.question_text}</p>
                               <div className="text-sm text-muted-foreground space-y-1">
@@ -601,13 +625,29 @@ export default function AdminQuestions() {
                                 <p>Správné odpovědi: {q.correct_answers.join(', ')}</p>
                               </div>
                             </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteQuestion(q.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewQuestion(q)}
+                              >
+                                Zobrazit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditQuestion(q)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteQuestion(q.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -616,6 +656,65 @@ export default function AdminQuestions() {
                 )}
               </CardContent>
             </Card>
+
+            {/* View Question Dialog */}
+            <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Detail otázky</DialogTitle>
+                </DialogHeader>
+                {selectedQuestion && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-base font-semibold">Otázka</Label>
+                      <p className="mt-2">{selectedQuestion.question_text}</p>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-base font-semibold">Možnosti odpovědí</Label>
+                      <div className="mt-2 space-y-2">
+                        {['a', 'b', 'c', 'd', 'e'].map((option) => {
+                          const optionText = selectedQuestion[`option_${option}`];
+                          if (!optionText) return null;
+                          const isCorrect = selectedQuestion.correct_answers.includes(option.toUpperCase());
+                          return (
+                            <div 
+                              key={option} 
+                              className={`p-3 rounded-lg ${isCorrect ? 'bg-green-100 dark:bg-green-900/30 border-2 border-green-500' : 'bg-muted'}`}
+                            >
+                              <span className="font-semibold">{option.toUpperCase()})</span> {optionText}
+                              {isCorrect && <span className="ml-2 text-green-600 dark:text-green-400 font-semibold">✓ Správná odpověď</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {selectedQuestion.explanation && (
+                      <div>
+                        <Label className="text-base font-semibold">Vysvětlení</Label>
+                        <p className="mt-2 text-muted-foreground">{selectedQuestion.explanation}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                      <div>
+                        <Label className="text-sm">Předmět</Label>
+                        <p className="text-sm">{selectedQuestion.subjects?.name}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Kategorie</Label>
+                        <p className="text-sm">{selectedQuestion.categories?.name}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm">Fakulta</Label>
+                        <p className="text-sm">{selectedQuestion.faculties?.name}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         </main>
       </div>
