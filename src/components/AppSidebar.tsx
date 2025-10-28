@@ -137,15 +137,15 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
+                <div className="px-2 py-2 flex justify-center">
+                  <ThemeToggle />
+                </div>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Odhlásit se</span>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <div className="px-2 py-2">
-                  <ThemeToggle />
-                </div>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
