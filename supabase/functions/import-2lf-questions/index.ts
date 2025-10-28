@@ -139,11 +139,15 @@ serve(async (req) => {
     for (const fileData of fileContents) {
       const { content, categoryName } = fileData
       
+      console.log('Received categoryName:', categoryName, 'Type:', typeof categoryName)
+      console.log('Available keys:', Object.keys(CATEGORY_MAPPING))
+      console.log('Exact match exists:', categoryName in CATEGORY_MAPPING)
+      
       const mapping = CATEGORY_MAPPING[categoryName]
       if (!mapping) {
         results.push({
           category: categoryName,
-          error: `Category not found in mapping`
+          error: `Category not found in mapping. Available categories: ${Object.keys(CATEGORY_MAPPING).join(', ')}`
         })
         continue
       }
