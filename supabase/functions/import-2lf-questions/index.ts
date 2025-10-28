@@ -10,6 +10,7 @@ const corsHeaders = {
 const FACULTY_2LF_ID = 'f35cac2d-799a-4b0f-8700-bbddd4067b41'
 const SUBJECT_BIOLOGY_ID = '73d9d5a4-5b52-4daf-9728-4e4e53092107'
 const SUBJECT_CHEMISTRY_ID = '195658f1-3f71-46b1-a8ef-b0aba4a9458d'
+const SUBJECT_PHYSICS_ID = '65c8e4c6-0257-47f0-8523-663bfefc9d91'
 
 const CATEGORY_MAPPING: Record<string, { categoryId: string; subjectId: string }> = {
   'Biologie člověka': { categoryId: 'abfb7dba-ac86-41fb-8f39-0d169c6fc19e', subjectId: SUBJECT_BIOLOGY_ID },
@@ -28,6 +29,13 @@ const CATEGORY_MAPPING: Record<string, { categoryId: string; subjectId: string }
   'Obecná chemie': { categoryId: 'f58ff025-d94f-4593-974a-353da0b9d783', subjectId: SUBJECT_CHEMISTRY_ID },
   'Organická chemie': { categoryId: 'a8f5b465-3d9a-4e5b-8cd3-5ffd6f9f0968', subjectId: SUBJECT_CHEMISTRY_ID },
   'Chemické výpočty': { categoryId: 'd9b81f90-860b-48f9-9c4d-ebe7e1377d56', subjectId: SUBJECT_CHEMISTRY_ID },
+  'Atomová fyzika': { categoryId: 'cc2e10d5-0c52-44c8-b087-b40d04c1e842', subjectId: SUBJECT_PHYSICS_ID },
+  'Elektřina a magnetismus': { categoryId: 'ac5ca3f7-0049-4c7f-ba23-3fde1b9466b5', subjectId: SUBJECT_PHYSICS_ID },
+  'Elektromagnetické vlnění': { categoryId: 'deb90928-96e7-44e1-8f48-b41e8fd82cd3', subjectId: SUBJECT_PHYSICS_ID },
+  'Kmitání vlnění a akustika': { categoryId: '9adc850a-6d15-40ee-abe7-62f4b56dda08', subjectId: SUBJECT_PHYSICS_ID },
+  'Molekulová fyzika': { categoryId: 'e2c645ac-f143-4042-a332-695664cb17f3', subjectId: SUBJECT_PHYSICS_ID },
+  'Optika': { categoryId: '986c5ff9-c5f2-4939-8dae-a5e63b3730f5', subjectId: SUBJECT_PHYSICS_ID },
+  'Termika': { categoryId: 'e2c645ac-f143-4042-a332-695664cb17f3', subjectId: SUBJECT_PHYSICS_ID },
 }
 
 function normalizeCategoryName(name: string): string {
