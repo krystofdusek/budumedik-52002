@@ -28,8 +28,35 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser(token || '');
     
     if (!user) {
-      throw new Error('Unauthorized');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
+
+    // Check if user has admin role
+    const { data: userRole, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    if (roleError || !userRole) {
+      console.warn(`Unauthorized AI generation attempt by user: ${user.id}`);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log(`AI question generation initiated by admin: ${user.id}`);
 
     // Fetch user's weak areas (categories with low success rate)
     const { data: userAnswers } = await supabase
