@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.import-2lf-questions]
 verify_jwt = false
+
+[functions.import-3lf-chemistry]
+verify_jwt = false

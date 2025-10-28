@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import 3LF Chemie</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    #log {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 20px;
+      min-height: 200px;
+      max-height: 500px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+    }
+    .success {
+      color: #28a745;
+    }
+    .error {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .info {
+      color: #007bff;
+    }
+    textarea {
+      width: 100%;
+      min-height: 300px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      margin: 10px 0;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Import 3LF Chemie Otázek</h1>
+    <p>Vložte otázky do textového pole níže a klikněte na "Importovat".</p>
+    
+    <textarea id="questionsInput" placeholder="Vložte sem otázky..."></textarea>
+    
+    <button id="importBtn" onclick="importQuestions()">Importovat</button>
+    
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const EDGE_FUNCTION_URL = 'https://jcabdfmvjblzulnvvuso.supabase.co/functions/v1/import-3lf-chemistry';
+    
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function importQuestions() {
+      const content = document.getElementById('questionsInput').value.trim();
+      const btn = document.getElementById('importBtn');
+      
+      if (!content) {
+        log('Nebyl zadán žádný obsah!', 'error');
+        return;
+      }
+      
+      btn.disabled = true;
+      log('Zahajuji import...', 'info');
+      
+      try {
+        const response = await fetch(EDGE_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content })
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+          log(`❌ Chyba: ${result.error}`, 'error');
+        } else {
+          log(`✅ Úspěšně naimportováno ${result.questionsImported} otázek`, 'success');
+          if (result.distribution) {
+            log('Rozdělení do kategorií:', 'info');
+            for (const [category, count] of Object.entries(result.distribution)) {
+              log(`  - ${category}: ${count} otázek`, 'info');
+            }
+          }
+        }
+      } catch (error) {
+        log(`❌ Chyba při importu: ${error.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
