@@ -19,7 +19,6 @@ const items = [
 const adminItems = [
   { title: "Správa otázek", url: "/admin/questions", icon: Shield },
   { title: "Nahlášené otázky", url: "/admin/reported", icon: FileText },
-  { title: "Import otázek", url: "/admin/import", icon: Upload },
 ];
 
 interface MobileNavProps {

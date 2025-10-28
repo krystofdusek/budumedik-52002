@@ -19,7 +19,6 @@ import History from "./pages/dashboard/History";
 import Test from "./pages/Test";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminReported from "./pages/admin/AdminReported";
-import AdminImport from "./pages/admin/AdminImport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,7 +49,6 @@ function AppRoutes() {
         <Route path="/test" element={<Test />} />
         <Route path="/admin/questions" element={<AdminQuestions />} />
         <Route path="/admin/reported" element={<AdminReported />} />
-        <Route path="/admin/import" element={<AdminImport />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
