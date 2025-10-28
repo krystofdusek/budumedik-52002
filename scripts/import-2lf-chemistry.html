@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
   <title>Import 2LF Chemistry Questions</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
@@ -62,7 +63,7 @@
         const response = await fetch(EDGE_FUNCTION_URL, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json; charset=UTF-8'
           },
           body: JSON.stringify({ fileContents })
         });

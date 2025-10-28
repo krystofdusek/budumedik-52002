@@ -30,6 +30,24 @@ const CATEGORY_MAPPING: Record<string, { categoryId: string; subjectId: string }
   'Chemické výpočty': { categoryId: 'd9b81f90-860b-48f9-9c4d-ebe7e1377d56', subjectId: SUBJECT_CHEMISTRY_ID },
 }
 
+function normalizeCategoryName(name: string): string {
+  const trimmed = (name || '').trim();
+  if (CATEGORY_MAPPING[trimmed]) return trimmed;
+  try {
+    const bytes = new Uint8Array([...trimmed].map(c => c.charCodeAt(0)));
+    const fixed = new TextDecoder('utf-8').decode(bytes);
+    if (CATEGORY_MAPPING[fixed]) return fixed;
+    const stripped = fixed.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    for (const key of Object.keys(CATEGORY_MAPPING)) {
+      const keyStripped = key.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (keyStripped === stripped) return key;
+    }
+    return fixed;
+  } catch {
+    return trimmed;
+  }
+}
+
 interface ParsedQuestion {
   question_number: number
   question_text: string
@@ -142,12 +160,15 @@ serve(async (req) => {
       console.log('Received categoryName:', categoryName, 'Type:', typeof categoryName)
       console.log('Available keys:', Object.keys(CATEGORY_MAPPING))
       console.log('Exact match exists:', categoryName in CATEGORY_MAPPING)
+
+      const normalizedCategory = normalizeCategoryName(categoryName)
+      console.log('Normalized category:', normalizedCategory)
       
-      const mapping = CATEGORY_MAPPING[categoryName]
+      const mapping = CATEGORY_MAPPING[normalizedCategory]
       if (!mapping) {
         results.push({
           category: categoryName,
-          error: `Category not found in mapping. Available categories: ${Object.keys(CATEGORY_MAPPING).join(', ')}`
+          error: `Category not found in mapping (normalized to "${normalizedCategory}"). Available categories: ${Object.keys(CATEGORY_MAPPING).join(', ')}`
         })
         continue
       }
