@@ -69,13 +69,13 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
   };
 
   return (
-    <Sidebar className="border-r border-border">
+    <Sidebar className="border-r border-border hidden md:flex">
       <SidebarHeader className="border-b border-border p-4">
         <div className="flex items-center justify-center">
           <img 
             src={logo} 
             alt="Logo" 
-            className="h-12 w-auto dark:invert" 
+            className="h-16 w-auto invert dark:invert-0 transition-transform hover:scale-105" 
           />
         </div>
       </SidebarHeader>

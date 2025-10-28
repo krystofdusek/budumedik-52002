@@ -23,13 +23,31 @@ export default function Test() {
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set());
   const [favoriteQuestions, setFavoriteQuestions] = useState<Set<string>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);
+  const [funFact, setFunFact] = useState<string>("");
 
   useEffect(() => {
     if (!questions || questions.length === 0) {
       navigate('/dashboard/tests');
     }
     loadUserData();
+    loadRandomFunFact();
   }, [questions, navigate]);
+
+  const loadRandomFunFact = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('fun_facts')
+        .select('fact_text')
+        .limit(100);
+      
+      if (!error && data && data.length > 0) {
+        const randomFact = data[Math.floor(Math.random() * data.length)];
+        setFunFact(randomFact.fact_text);
+      }
+    } catch (error) {
+      console.error('Error loading fun fact:', error);
+    }
+  };
 
   const loadUserData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -316,9 +334,19 @@ export default function Test() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/50 p-8">
+    <div className="min-h-screen bg-muted/50 p-4 md:p-8 animate-fade-in">
       <div className="max-w-4xl mx-auto space-y-6">
-        <Card>
+        {funFact && (
+          <Card className="bg-primary/5 border-primary/20 animate-scale-in">
+            <CardContent className="pt-6">
+              <p className="text-sm font-medium text-primary flex items-start gap-2">
+                <span className="text-lg">💡</span>
+                <span><strong>Věděli jste, že?</strong> {funFact}</span>
+              </p>
+            </CardContent>
+          </Card>
+        )}
+        <Card className="animate-scale-in">
           <CardHeader>
             <div className="flex items-center justify-between mb-4">
               <CardTitle>Otázka {currentQuestion + 1} z {questions.length}</CardTitle>

@@ -1,5 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { MobileNav } from "@/components/MobileNav";
+import logo from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, FileText, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,12 +10,27 @@ import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id || null);
-    });
+    checkAdminStatus();
   }, []);
+
+  const checkAdminStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setUserId(user.id);
+
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+    
+    setIsAdmin(!!roleData);
+  };
 
   const { data: statistics } = useQuery({
     queryKey: ["user-statistics", userId],
@@ -38,10 +55,18 @@ export default function Dashboard() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 p-8 bg-muted/50">
+        <AppSidebar isAdmin={isAdmin} />
+        <main className="flex-1 p-4 md:p-8 bg-muted/50 animate-fade-in">
+          <div className="md:hidden mb-4 flex items-center justify-between">
+            <MobileNav isAdmin={isAdmin} />
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-12 w-auto invert dark:invert-0" 
+            />
+          </div>
           <div className="max-w-7xl mx-auto space-y-8">
-            <div>
+            <div className="animate-scale-in">
               <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
               <p className="text-muted-foreground">
                 Vítejte zpět! Připraveni na další test?
@@ -49,7 +74,7 @@ export default function Dashboard() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              <Card>
+              <Card className="hover-scale transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-2xl">
@@ -61,7 +86,7 @@ export default function Dashboard() {
                 </CardHeader>
               </Card>
 
-              <Card>
+              <Card className="hover-scale transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-2xl">{successRate}%</CardTitle>
@@ -71,7 +96,7 @@ export default function Dashboard() {
                 </CardHeader>
               </Card>
 
-              <Card>
+              <Card className="hover-scale transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-2xl">
@@ -84,7 +109,7 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            <Card>
+            <Card className="animate-fade-in">
               <CardHeader>
                 <CardTitle>Rychlý start</CardTitle>
                 <CardDescription>

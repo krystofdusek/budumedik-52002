@@ -99,6 +99,24 @@ export type Database = {
           },
         ]
       }
+      fun_facts: {
+        Row: {
+          created_at: string | null
+          fact_text: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          fact_text: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          fact_text?: string
+          id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
