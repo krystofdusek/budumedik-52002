@@ -35,9 +35,9 @@ export default function Home() {
                 
               </div>
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-                Vaše cesta na medicínu{" "}
+                Dostaňte se na medicínu{" "}
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
-                  dostaňte se na medicínu díky AI
+                  díky AI
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground">
