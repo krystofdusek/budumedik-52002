@@ -4,33 +4,25 @@ import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Target, TrendingUp, Zap } from "lucide-react";
 import logo from "@/assets/logo.png";
-
-const features = [
-  {
-    icon: Brain,
-    title: "AI Personalizované testy",
-    description: "Testy přizpůsobené vašim chybám a potřebám díky pokročilé AI technologii",
-  },
-  {
-    icon: Target,
-    title: "Cílená příprava",
-    description: "Zaměřte se na konkrétní předměty, kategorie a fakulty podle vašich preferencí",
-  },
-  {
-    icon: TrendingUp,
-    title: "Sledování pokroku",
-    description: "Detailní statistiky a analýza vašeho výkonu v jednotlivých oblastech",
-  },
-  {
-    icon: Zap,
-    title: "Skutečné otázky",
-    description: "Databáze otázek z minulých let pro maximální autenticitu přípravy",
-  },
-];
-
+const features = [{
+  icon: Brain,
+  title: "AI Personalizované testy",
+  description: "Testy přizpůsobené vašim chybám a potřebám díky pokročilé AI technologii"
+}, {
+  icon: Target,
+  title: "Cílená příprava",
+  description: "Zaměřte se na konkrétní předměty, kategorie a fakulty podle vašich preferencí"
+}, {
+  icon: TrendingUp,
+  title: "Sledování pokroku",
+  description: "Detailní statistiky a analýza vašeho výkonu v jednotlivých oblastech"
+}, {
+  icon: Zap,
+  title: "Skutečné otázky",
+  description: "Databáze otázek z minulých let pro maximální autenticitu přípravy"
+}];
 export default function Home() {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="pt-16">
@@ -40,11 +32,7 @@ export default function Home() {
           <div className="container relative z-10">
             <div className="max-w-3xl mx-auto text-center space-y-8">
               <div className="flex justify-center mb-8">
-                <img 
-                  src={logo} 
-                  alt="Logo" 
-                  className="h-24 w-auto dark:invert" 
-                />
+                
               </div>
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
                 Připravte se na{" "}
@@ -85,8 +73,7 @@ export default function Home() {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map((feature) => (
-                <Card key={feature.title} className="border-border">
+              {features.map(feature => <Card key={feature.title} className="border-border">
                   <CardHeader>
                     <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                       <feature.icon className="h-6 w-6 text-primary" />
@@ -98,8 +85,7 @@ export default function Home() {
                       {feature.description}
                     </CardDescription>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </section>
@@ -134,6 +120,5 @@ export default function Home() {
           <p>© 2025. Všechna práva vyhrazena.</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 }
