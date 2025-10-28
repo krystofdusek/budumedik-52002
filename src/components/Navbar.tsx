@@ -11,7 +11,7 @@ export function Navbar() {
           <img 
             src={logo} 
             alt="Logo" 
-            className="h-20 w-auto invert dark:invert-0 transition-transform hover:scale-105" 
+            className="h-32 w-auto invert dark:invert-0 transition-transform hover:scale-105" 
           />
         </Link>
         

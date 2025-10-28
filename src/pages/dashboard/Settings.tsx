@@ -206,7 +206,7 @@ export default function Settings() {
             <img 
               src={logo} 
               alt="Logo" 
-              className="h-16 w-auto invert dark:invert-0" 
+              className="h-24 w-auto invert dark:invert-0" 
             />
           </div>
           <div className="max-w-4xl mx-auto space-y-8">

@@ -226,7 +226,7 @@ export default function History() {
             <img 
               src={logo} 
               alt="Logo" 
-              className="h-16 w-auto invert dark:invert-0" 
+              className="h-24 w-auto invert dark:invert-0" 
             />
           </div>
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
