@@ -19,7 +19,7 @@ const features = [{
 }, {
   icon: Zap,
   title: "Skutečné otázky",
-  description: "Databáze otázek z minulých let pro maximální autenticitu přípravy"
+  description: "Otázky inspirované skutečnými přijímacími zkouškami z minulých let"
 }];
 export default function Home() {
   return <div className="min-h-screen bg-background">
