@@ -1,5 +1,6 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { MobileNav } from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Target, Award, Users, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -169,6 +170,7 @@ export default function Progress() {
     }
   };
   return <SidebarProvider>
+      <MobileNav />
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <main className="flex-1 p-8 bg-muted/50">

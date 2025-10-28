@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { MobileNav } from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { Plus, Trash2, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { sortFacultiesByCity } from "@/lib/facultySort";
 
 const questionSchema = z.object({
   question_text: z.string().trim().min(10, "Otázka musí mít alespoň 10 znaků").max(1000, "Otázka může mít maximálně 1000 znaků"),
@@ -109,7 +111,7 @@ export default function AdminQuestions() {
       .order('created_at', { ascending: false });
 
     setSubjects(subjectsData || []);
-    setFaculties(facultiesData || []);
+    setFaculties(sortFacultiesByCity(facultiesData || []));
     setQuestions(questionsData || []);
   };
 
@@ -249,6 +251,7 @@ export default function AdminQuestions() {
 
   return (
     <SidebarProvider>
+      <MobileNav />
       <div className="min-h-screen flex w-full">
         <AppSidebar isAdmin={true} />
         <main className="flex-1 p-8 bg-muted/50">

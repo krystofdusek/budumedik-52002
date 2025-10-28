@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { sortFacultiesByCity } from "@/lib/facultySort";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,8 +45,8 @@ export default function Settings() {
 
   const loadData = async () => {
     // Load faculties for the dropdown regardless of auth
-    const { data: facultiesData, error: facErr } = await supabase.from('faculties').select('*').order('name');
-    if (!facErr) setFaculties(facultiesData || []);
+    const { data: facultiesData, error: facErr } = await supabase.from('faculties').select('*');
+    if (!facErr) setFaculties(sortFacultiesByCity(facultiesData || []));
 
     // Then try to load the current user to preselect favorite faculty
     const { data: { user } } = await supabase.auth.getUser();

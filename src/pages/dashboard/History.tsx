@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { MobileNav } from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, Heart, Star } from "lucide-react";
+import { sortFacultiesByCity } from "@/lib/facultySort";
 
 interface Question {
   id: string;
@@ -71,7 +73,7 @@ export default function History() {
     
     setSubjects(subjectsData || []);
     setCategories(categoriesData || []);
-    setFaculties(facultiesData || []);
+    setFaculties(sortFacultiesByCity(facultiesData || []));
   };
 
   const loadData = async () => {
@@ -214,6 +216,7 @@ export default function History() {
 
   return (
     <SidebarProvider>
+      <MobileNav />
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <main className="flex-1 p-8 bg-muted/50">

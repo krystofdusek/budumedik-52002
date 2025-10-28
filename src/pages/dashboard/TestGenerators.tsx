@@ -12,6 +12,7 @@ import { Brain, FileText, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingWithFacts } from "@/components/LoadingWithFacts";
+import { sortFacultiesByCity } from "@/lib/facultySort";
 export default function TestGenerators() {
   const navigate = useNavigate();
   const {
@@ -43,7 +44,7 @@ export default function TestGenerators() {
       data: facultiesData
     } = await supabase.from('faculties').select('*');
     setSubjects(subjectsData || []);
-    setFaculties(facultiesData || []);
+    setFaculties(sortFacultiesByCity(facultiesData || []));
 
     // Load user's favorite faculty
     const {
