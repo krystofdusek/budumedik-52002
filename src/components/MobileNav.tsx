@@ -73,6 +73,7 @@ export function MobileNav({ isAdmin = false }: MobileNavProps) {
                   <NavLink
                     key={item.title}
                     to={item.url}
+                    end={item.url === "/dashboard"}
                     onClick={() => setIsOpen(false)}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${

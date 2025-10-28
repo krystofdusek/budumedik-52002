@@ -90,6 +90,7 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
+                      end={item.url === "/dashboard"}
                       className={({ isActive }) =>
                         isActive
                           ? "bg-blue-500/20"
