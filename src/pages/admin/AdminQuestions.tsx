@@ -44,6 +44,13 @@ export default function AdminQuestions() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  
+  // Filter states
+  const [filterSubject, setFilterSubject] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterFaculty, setFilterFaculty] = useState<string>('');
+  const [filterYear, setFilterYear] = useState<string>('');
+  const [searchText, setSearchText] = useState<string>('');
 
   const [formData, setFormData] = useState({
     question_text: '',
@@ -124,6 +131,19 @@ export default function AdminQuestions() {
     
     setCategories(data || []);
   };
+
+  // Filter questions based on selected filters
+  const filteredQuestions = questions.filter((q) => {
+    if (filterSubject && q.subject_id !== filterSubject) return false;
+    if (filterCategory && q.category_id !== filterCategory) return false;
+    if (filterFaculty && q.faculty_id !== filterFaculty) return false;
+    if (filterYear && q.year?.toString() !== filterYear) return false;
+    if (searchText && !q.question_text.toLowerCase().includes(searchText.toLowerCase())) return false;
+    return true;
+  });
+
+  // Get unique years from questions
+  const availableYears = Array.from(new Set(questions.map(q => q.year).filter(Boolean))).sort((a, b) => b - a);
 
   const handleCheckboxChange = (option: string, checked: boolean) => {
     setFormData({
@@ -417,19 +437,110 @@ export default function AdminQuestions() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Seznam otázek ({questions.length})</CardTitle>
+                <CardTitle>Seznam otázek ({filteredQuestions.length} z {questions.length})</CardTitle>
                 <CardDescription>
-                  Všechny otázky v databázi
+                  Filtrujte otázky podle různých kritérií
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                {questions.length === 0 ? (
+              <CardContent className="space-y-4">
+                {/* Filter Section */}
+                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label>Předmět</Label>
+                      <Select value={filterSubject} onValueChange={setFilterSubject}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Všechny předměty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Všechny předměty</SelectItem>
+                          {subjects.map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Kategorie</Label>
+                      <Select value={filterCategory} onValueChange={setFilterCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Všechny kategorie" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Všechny kategorie</SelectItem>
+                          {categories.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Fakulta</Label>
+                      <Select value={filterFaculty} onValueChange={setFilterFaculty}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Všechny fakulty" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Všechny fakulty</SelectItem>
+                          {faculties.map(f => (
+                            <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Rok</Label>
+                      <Select value={filterYear} onValueChange={setFilterYear}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Všechny roky" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Všechny roky</SelectItem>
+                          {availableYears.map(year => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label>Hledat v textu otázky</Label>
+                      <Input
+                        placeholder="Zadejte text..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {(filterSubject || filterCategory || filterFaculty || filterYear || searchText) && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setFilterSubject('');
+                        setFilterCategory('');
+                        setFilterFaculty('');
+                        setFilterYear('');
+                        setSearchText('');
+                      }}
+                    >
+                      Vymazat filtry
+                    </Button>
+                  )}
+                </div>
+                {filteredQuestions.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <p>Zatím nebyly přidány žádné otázky</p>
+                    <p>{questions.length === 0 ? 'Zatím nebyly přidány žádné otázky' : 'Žádné otázky neodpovídají vybraným filtrům'}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {questions.map((q) => (
+                    {filteredQuestions.map((q) => (
                       <Card key={q.id}>
                         <CardContent className="pt-6">
                           <div className="flex justify-between items-start">
