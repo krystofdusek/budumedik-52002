@@ -1,4 +1,4 @@
-import { Home, FileText, BarChart3, Settings, Shield, LogOut, Trophy, History } from "lucide-react";
+import { Home, FileText, BarChart3, Settings, Shield, LogOut, Trophy, History, Upload } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -29,6 +29,7 @@ const items = [
 const adminItems = [
   { title: "Správa otázek", url: "/admin/questions", icon: Shield },
   { title: "Nahlášené otázky", url: "/admin/reported", icon: FileText },
+  { title: "Import otázek", url: "/admin/import", icon: Upload },
 ];
 
 export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {}) {

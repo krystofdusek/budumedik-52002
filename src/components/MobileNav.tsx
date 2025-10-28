@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Menu, X, Home, FileText, BarChart3, Settings, Trophy, History, LogOut, Shield } from "lucide-react";
+import { Menu, X, Home, FileText, BarChart3, Settings, Trophy, History, LogOut, Shield, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ const items = [
 const adminItems = [
   { title: "Správa otázek", url: "/admin/questions", icon: Shield },
   { title: "Nahlášené otázky", url: "/admin/reported", icon: FileText },
+  { title: "Import otázek", url: "/admin/import", icon: Upload },
 ];
 
 interface MobileNavProps {
