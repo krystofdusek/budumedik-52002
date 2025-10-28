@@ -461,14 +461,9 @@ export default function Test() {
             )}
 
             <div className="flex justify-between items-center pt-4">
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={goToPrevious} disabled={currentQuestion === 0}>
-                  <ChevronLeft className="h-4 w-4 mr-2" />Předchozí
-                </Button>
-                {!answeredQuestions.has(currentQuestion) && question.id && (
-                  <Button onClick={handleAnswerSubmit}>Odpovědět</Button>
-                )}
-              </div>
+              <Button variant="outline" onClick={goToPrevious} disabled={currentQuestion === 0}>
+                <ChevronLeft className="h-4 w-4 mr-2" />Předchozí
+              </Button>
 
               {currentQuestion < questions.length - 1 ? (
                 <Button onClick={goToNext}>

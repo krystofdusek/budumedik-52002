@@ -92,7 +92,7 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
                       to={item.url}
                       className={({ isActive }) =>
                         isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          ? "bg-blue-500 text-white hover:bg-blue-600"
                           : ""
                       }
                     >
@@ -118,7 +118,7 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
                         to={item.url}
                         className={({ isActive }) =>
                           isActive
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            ? "bg-blue-500 text-white hover:bg-blue-600"
                             : ""
                         }
                       >
