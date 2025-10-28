@@ -339,6 +339,11 @@ export default function AdminQuestions() {
 
   const handleEditQuestion = (question: any) => {
     setEditingQuestion(question);
+    // Ensure correct_answers are in uppercase format
+    const correctAnswers = Array.isArray(question.correct_answers) 
+      ? question.correct_answers.map((ans: string) => ans.toUpperCase())
+      : [];
+    
     setFormData({
       question_text: question.question_text,
       option_a: question.option_a,
@@ -346,7 +351,7 @@ export default function AdminQuestions() {
       option_c: question.option_c,
       option_d: question.option_d,
       option_e: question.option_e || '',
-      correct_answers: question.correct_answers,
+      correct_answers: correctAnswers,
       explanation: question.explanation || '',
       subject_id: question.subject_id,
       category_id: question.category_id,
