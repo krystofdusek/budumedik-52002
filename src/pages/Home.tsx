@@ -37,7 +37,7 @@ export default function Home() {
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
                 Vaše cesta na medicínu{" "}
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
-                  s AI asistentem
+                  dostaňte se na medicínu díky AI
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground">
