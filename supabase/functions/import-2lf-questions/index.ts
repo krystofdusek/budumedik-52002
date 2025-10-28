@@ -9,19 +9,25 @@ const corsHeaders = {
 // Database IDs
 const FACULTY_2LF_ID = 'f35cac2d-799a-4b0f-8700-bbddd4067b41'
 const SUBJECT_BIOLOGY_ID = '73d9d5a4-5b52-4daf-9728-4e4e53092107'
+const SUBJECT_CHEMISTRY_ID = '195658f1-3f71-46b1-a8ef-b0aba4a9458d'
 
-const CATEGORY_MAPPING: Record<string, string> = {
-  'Biologie člověka': 'abfb7dba-ac86-41fb-8f39-0d169c6fc19e',
-  'Biologie rostlin a hub': '8915ad72-9703-4e1b-8f76-95cc3c23f7bb',
-  'Biologie živočichů': 'c7ac38d0-0084-4de0-9cff-fc5ce4aff0a8',
-  'Buněčná biologie': 'b44e2240-71c0-4252-9835-eb873e97ad4b',
-  'Ekologie': 'c8b191cb-f201-4a04-92a3-ffc6edcd26ed',
-  'Evoluční biologie': '82a3044e-9475-4252-9539-975b5b57d10f',
-  'Molekulární biologie': '812b99e9-c015-465a-9d34-1c6a76358a01',
-  'Obecná a populační genetika': '812b99e9-c015-465a-9d34-1c6a76358a01',
-  'Úvod do biologie': 'abfb7dba-ac86-41fb-8f39-0d169c6fc19e',
-  'Historie medicíny': '87aba960-3e79-41b6-92dd-050c3646c907',
-  'Mikrobiologie a virologie': '66826462-beeb-4676-8941-42d4522a704f',
+const CATEGORY_MAPPING: Record<string, { categoryId: string; subjectId: string }> = {
+  'Biologie člověka': { categoryId: 'abfb7dba-ac86-41fb-8f39-0d169c6fc19e', subjectId: SUBJECT_BIOLOGY_ID },
+  'Biologie rostlin a hub': { categoryId: '8915ad72-9703-4e1b-8f76-95cc3c23f7bb', subjectId: SUBJECT_BIOLOGY_ID },
+  'Biologie živočichů': { categoryId: 'c7ac38d0-0084-4de0-9cff-fc5ce4aff0a8', subjectId: SUBJECT_BIOLOGY_ID },
+  'Buněčná biologie': { categoryId: 'b44e2240-71c0-4252-9835-eb873e97ad4b', subjectId: SUBJECT_BIOLOGY_ID },
+  'Ekologie': { categoryId: 'c8b191cb-f201-4a04-92a3-ffc6edcd26ed', subjectId: SUBJECT_BIOLOGY_ID },
+  'Evoluční biologie': { categoryId: '82a3044e-9475-4252-9539-975b5b57d10f', subjectId: SUBJECT_BIOLOGY_ID },
+  'Molekulární biologie': { categoryId: '812b99e9-c015-465a-9d34-1c6a76358a01', subjectId: SUBJECT_BIOLOGY_ID },
+  'Obecná a populační genetika': { categoryId: '812b99e9-c015-465a-9d34-1c6a76358a01', subjectId: SUBJECT_BIOLOGY_ID },
+  'Úvod do biologie': { categoryId: 'abfb7dba-ac86-41fb-8f39-0d169c6fc19e', subjectId: SUBJECT_BIOLOGY_ID },
+  'Historie medicíny': { categoryId: '87aba960-3e79-41b6-92dd-050c3646c907', subjectId: SUBJECT_BIOLOGY_ID },
+  'Mikrobiologie a virologie': { categoryId: '66826462-beeb-4676-8941-42d4522a704f', subjectId: SUBJECT_BIOLOGY_ID },
+  'Anorganická chemie': { categoryId: '46eb7ac6-0111-46aa-9d93-b01aff59d606', subjectId: SUBJECT_CHEMISTRY_ID },
+  'Biochemie': { categoryId: '6410a98c-f8d2-4b00-8f7d-1e1d3a371f3f', subjectId: SUBJECT_CHEMISTRY_ID },
+  'Obecná chemie': { categoryId: 'f58ff025-d94f-4593-974a-353da0b9d783', subjectId: SUBJECT_CHEMISTRY_ID },
+  'Organická chemie': { categoryId: 'a8f5b465-3d9a-4e5b-8cd3-5ffd6f9f0968', subjectId: SUBJECT_CHEMISTRY_ID },
+  'Chemické výpočty': { categoryId: 'f58ff025-d94f-4593-974a-353da0b9d783', subjectId: SUBJECT_CHEMISTRY_ID },
 }
 
 interface ParsedQuestion {
@@ -133,8 +139,8 @@ serve(async (req) => {
     for (const fileData of fileContents) {
       const { content, categoryName } = fileData
       
-      const categoryId = CATEGORY_MAPPING[categoryName]
-      if (!categoryId) {
+      const mapping = CATEGORY_MAPPING[categoryName]
+      if (!mapping) {
         results.push({
           category: categoryName,
           error: `Category not found in mapping`
@@ -159,8 +165,8 @@ serve(async (req) => {
           option_d: q.option_d,
           option_e: q.option_e || null,
           correct_answers: q.correct_answers,
-          subject_id: SUBJECT_BIOLOGY_ID,
-          category_id: categoryId,
+          subject_id: mapping.subjectId,
+          category_id: mapping.categoryId,
           faculty_id: FACULTY_2LF_ID,
           is_ai_generated: false,
           year: q.question_number

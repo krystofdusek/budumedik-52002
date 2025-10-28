@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Import 2LF Chemistry Questions</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    #status { margin: 20px 0; font-weight: bold; }
+    #results { background: #f5f5f5; padding: 15px; border-radius: 5px; max-height: 400px; overflow-y: auto; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Import 2LF Chemistry Questions</h1>
+  <p>This script will import all chemistry questions from markdown files into the database.</p>
+  
+  <button id="importBtn">Start Import</button>
+  
+  <div id="status"></div>
+  <div id="results"></div>
+
+  <script>
+    const EDGE_FUNCTION_URL = 'https://jcabdfmvjblzulnvvuso.supabase.co/functions/v1/import-2lf-questions';
+    
+    const files = [
+      { path: '/data/2lf/Anorganická_chemie.md', category: 'Anorganická chemie' },
+      { path: '/data/2lf/Biochemie.md', category: 'Biochemie' },
+      { path: '/data/2lf/Chemické_výpočty.md', category: 'Chemické výpočty' },
+      { path: '/data/2lf/Obecná_chemie.md', category: 'Obecná chemie' },
+      { path: '/data/2lf/Organická_chemie.md', category: 'Organická chemie' }
+    ];
+
+    document.getElementById('importBtn').addEventListener('click', async () => {
+      const statusDiv = document.getElementById('status');
+      const resultsDiv = document.getElementById('results');
+      const btn = document.getElementById('importBtn');
+      
+      btn.disabled = true;
+      resultsDiv.innerHTML = '';
+      
+      try {
+        const fileContents = [];
+        
+        for (const file of files) {
+          statusDiv.innerHTML = `Loading ${file.category}...`;
+          const response = await fetch(file.path);
+          if (!response.ok) {
+            throw new Error(`Failed to load ${file.category}`);
+          }
+          const content = await response.text();
+          fileContents.push({ content, categoryName: file.category });
+          resultsDiv.innerHTML += `<p>✓ Loaded ${file.category} (${content.length} characters)</p>`;
+        }
+        
+        statusDiv.innerHTML = 'Importing to database...';
+        
+        const response = await fetch(EDGE_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ fileContents })
+        });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Edge function error: ${error}`);
+        }
+        
+        const data = await response.json();
+        
+        statusDiv.innerHTML = '<span class="success">✅ Import completed!</span>';
+        
+        resultsDiv.innerHTML += '<h3>Import Results:</h3>';
+        data.results?.forEach(result => {
+          if (result.error) {
+            resultsDiv.innerHTML += `<p class="error">❌ ${result.category}: ${result.error}</p>`;
+          } else {
+            resultsDiv.innerHTML += `<p class="success">✓ ${result.category}: ${result.questionsImported} questions imported</p>`;
+          }
+        });
+        
+        const total = data.results?.reduce((sum, r) => sum + (r.questionsImported || 0), 0) || 0;
+        resultsDiv.innerHTML += `<p><strong>Total: ${total} questions imported</strong></p>`;
+        
+      } catch (error) {
+        statusDiv.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+        resultsDiv.innerHTML += `<pre class="error">${error.stack || error.message}</pre>`;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
