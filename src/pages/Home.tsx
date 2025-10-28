@@ -44,7 +44,7 @@ export default function Home() {
                 Inteligentní platforma pro přípravu na přijímací zkoušky
                 s AI personalizací a skutečnými otázkami z minulých let
               </p>
-              <div className="flex gap-4 justify-center">
+              <div className="flex flex-col gap-4 items-center">
                 <Link to="/auth">
                   <Button size="lg" className="text-lg">
                     Začít se učit
