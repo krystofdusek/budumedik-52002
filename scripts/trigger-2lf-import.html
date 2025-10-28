@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Import 2LF Questions</title>
+    <script>
+        const FILES = [
+            { path: 'user-uploads://2LF_-_Biologie_člověka.md', category: 'Biologie člověka' },
+            { path: 'user-uploads://2LF_-_Biologie_rostlin_a_hub.md', category: 'Biologie rostlin a hub' },
+            { path: 'user-uploads://2LF_-_Biologie_živočichů.md', category: 'Biologie živočichů' },
+            { path: 'user-uploads://2LF_-_Buněčná_biologie.md', category: 'Buněčná biologie' },
+            { path: 'user-uploads://2LF_-_Ekologie.md', category: 'Ekologie' },
+            { path: 'user-uploads://2LF_-_Evoluční_biologie.md', category: 'Evoluční biologie' },
+            { path: 'user-uploads://2LF_-_Molekulární_biologie.md', category: 'Molekulární biologie' },
+            { path: 'user-uploads://2LF_-_Obecná_a_populační_genetika.md', category: 'Obecná a populační genetika' },
+            { path: 'user-uploads://2LF_-_Úvod_do_biologie.md', category: 'Úvod do biologie' },
+            { path: 'user-uploads://2LF_-_Historie_medicíny.md', category: 'Historie medicíny' }
+        ];
+        
+        async function importQuestions() {
+            const status = document.getElementById('status');
+            status.innerHTML = 'Reading files...';
+            
+            const fileContents = await Promise.all(FILES.map(async (file) => {
+                const response = await fetch(file.path);
+                const content = await response.text();
+                return { content, categoryName: file.category };
+            }));
+            
+            status.innerHTML = 'Importing to database...';
+            
+            const response = await fetch('https://jcabdfmvjblzulnvvuso.supabase.co/functions/v1/import-2lf-questions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + 'YOUR_ANON_KEY'
+                },
+                body: JSON.stringify({ fileContents })
+            });
+            
+            const result = await response.json();
+            status.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+        }
+    </script>
+</head>
+<body>
+    <h1>Import 2LF Questions</h1>
+    <button onclick="importQuestions()">Start Import</button>
+    <div id="status"></div>
+</body>
+</html>
