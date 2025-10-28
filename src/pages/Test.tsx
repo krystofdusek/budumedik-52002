@@ -6,6 +6,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight, Flag, Heart } from "lucide-react";
@@ -26,6 +42,17 @@ export default function Test() {
   const [favoriteQuestions, setFavoriteQuestions] = useState<Set<string>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);
   const [funFact, setFunFact] = useState<string>("");
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportCategory, setReportCategory] = useState<string>("");
+  const [reportNote, setReportNote] = useState<string>("");
+
+  const reportCategories = [
+    { value: "wrong_answer", label: "Nesprávná odpověď" },
+    { value: "wrong_question", label: "Chyba v zadání" },
+    { value: "unclear", label: "Nejasná formulace" },
+    { value: "outdated", label: "Zastaralé informace" },
+    { value: "other", label: "Jiný důvod" },
+  ];
 
   useEffect(() => {
     if (!questions || questions.length === 0) {
@@ -152,16 +179,33 @@ export default function Test() {
   const reportQuestion = async () => {
     if (!userId || !question.id) return;
     
+    if (!reportCategory) {
+      toast({ 
+        title: "Chyba", 
+        description: "Vyberte prosím kategorii nahlášení", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    
+    const categoryLabel = reportCategories.find(c => c.value === reportCategory)?.label || reportCategory;
+    const reason = reportNote 
+      ? `${categoryLabel}: ${reportNote}` 
+      : categoryLabel;
+    
     const { error } = await supabase.from("question_reports").insert({
       user_id: userId,
       question_id: question.id,
-      reason: "Nahlášeno uživatelem během testu",
+      reason: reason,
     });
 
     if (error) {
       toast({ title: "Chyba", description: "Nepodařilo se nahlásit otázku", variant: "destructive" });
     } else {
       toast({ title: "Otázka nahlášena", description: "Děkujeme za nahlášení" });
+      setReportDialogOpen(false);
+      setReportCategory("");
+      setReportNote("");
     }
   };
 
@@ -366,7 +410,7 @@ export default function Test() {
                     <Button variant="outline" size="sm" onClick={toggleFavorite}>
                       <Heart className={`h-4 w-4 ${favoriteQuestions.has(question.id) ? 'fill-primary text-primary' : ''}`} />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={reportQuestion}>
+                    <Button variant="outline" size="sm" onClick={() => setReportDialogOpen(true)}>
                       <Flag className="h-4 w-4" />
                     </Button>
                   </>
@@ -456,6 +500,52 @@ export default function Test() {
             </div>
           </CardContent>
         </Card>
+
+        <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Nahlásit otázku</DialogTitle>
+              <DialogDescription>
+                Pomozte nám zlepšit kvalitu otázek. Vyberte kategorii problému a případně přidejte poznámku.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">Kategorie nahlášení *</Label>
+                <Select value={reportCategory} onValueChange={setReportCategory}>
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Vyberte kategorii" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reportCategories.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="note">Poznámka (volitelné)</Label>
+                <Textarea
+                  id="note"
+                  placeholder="Popište prosím problém..."
+                  value={reportNote}
+                  onChange={(e) => setReportNote(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
+                Zrušit
+              </Button>
+              <Button onClick={reportQuestion} disabled={!reportCategory}>
+                Odeslat nahlášení
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

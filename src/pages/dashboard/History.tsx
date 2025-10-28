@@ -174,14 +174,14 @@ export default function History() {
 
   const renderQuestion = (question: Question, type: "wrong" | "favorite", itemId?: string) => (
     <Card key={question.id} className="mb-4">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg mb-2">{question.question_text}</CardTitle>
-            <div className="flex gap-2 flex-wrap">
-              <Badge variant="secondary">{question.subject.name}</Badge>
-              <Badge variant="outline">{question.category.name}</Badge>
-              <Badge variant="outline">{question.faculty.name}</Badge>
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-base sm:text-lg mb-2 break-words">{question.question_text}</CardTitle>
+            <div className="flex gap-1 sm:gap-2 flex-wrap">
+              <Badge variant="secondary" className="text-xs">{question.subject.name}</Badge>
+              <Badge variant="outline" className="text-xs">{question.category.name}</Badge>
+              <Badge variant="outline" className="text-xs hidden sm:inline-flex">{question.faculty.name}</Badge>
             </div>
           </div>
           {type === "favorite" && itemId && (
@@ -189,26 +189,27 @@ export default function History() {
               variant="ghost"
               size="sm"
               onClick={() => removeFavorite(itemId)}
+              className="flex-shrink-0"
             >
               <Heart className="h-4 w-4 fill-primary text-primary" />
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-4 md:p-6">
         <div className="space-y-2 mb-4">
-          <div className={question.correct_answers.includes('A') ? 'text-primary font-medium' : ''}>A) {question.option_a}</div>
-          <div className={question.correct_answers.includes('B') ? 'text-primary font-medium' : ''}>B) {question.option_b}</div>
-          <div className={question.correct_answers.includes('C') ? 'text-primary font-medium' : ''}>C) {question.option_c}</div>
-          <div className={question.correct_answers.includes('D') ? 'text-primary font-medium' : ''}>D) {question.option_d}</div>
+          <div className={`text-sm sm:text-base break-words ${question.correct_answers.includes('A') ? 'text-primary font-medium' : ''}`}>A) {question.option_a}</div>
+          <div className={`text-sm sm:text-base break-words ${question.correct_answers.includes('B') ? 'text-primary font-medium' : ''}`}>B) {question.option_b}</div>
+          <div className={`text-sm sm:text-base break-words ${question.correct_answers.includes('C') ? 'text-primary font-medium' : ''}`}>C) {question.option_c}</div>
+          <div className={`text-sm sm:text-base break-words ${question.correct_answers.includes('D') ? 'text-primary font-medium' : ''}`}>D) {question.option_d}</div>
           {question.option_e && (
-            <div className={question.correct_answers.includes('E') ? 'text-primary font-medium' : ''}>E) {question.option_e}</div>
+            <div className={`text-sm sm:text-base break-words ${question.correct_answers.includes('E') ? 'text-primary font-medium' : ''}`}>E) {question.option_e}</div>
           )}
         </div>
         {question.explanation && (
-          <div className="mt-4 p-4 bg-muted rounded-lg">
+          <div className="mt-4 p-3 sm:p-4 bg-muted rounded-lg">
             <p className="text-sm font-medium mb-2">Vysvětlení:</p>
-            <p className="text-sm">{question.explanation}</p>
+            <p className="text-xs sm:text-sm break-words">{question.explanation}</p>
           </div>
         )}
       </CardContent>
@@ -219,7 +220,7 @@ export default function History() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 bg-muted/50">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 bg-muted/50">
           <div className="md:hidden mb-4 flex items-center justify-between">
             <MobileNav />
             <img 
@@ -228,17 +229,17 @@ export default function History() {
               className="h-12 w-auto invert dark:invert-0" 
             />
           </div>
-          <div className="max-w-7xl mx-auto space-y-8">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Historie</h1>
-              <p className="text-muted-foreground">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
+            <div className="px-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Historie</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Zobrazení špatně zodpovězených a oblíbených otázek
               </p>
             </div>
 
-            <div className="flex gap-4 flex-wrap">
+            <div className="flex gap-2 sm:gap-4 flex-wrap px-1">
               <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[180px] md:w-[200px]">
                   <SelectValue placeholder="Předmět" />
                 </SelectTrigger>
                 <SelectContent>
@@ -250,7 +251,7 @@ export default function History() {
               </Select>
 
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[180px] md:w-[200px]">
                   <SelectValue placeholder="Kategorie" />
                 </SelectTrigger>
                 <SelectContent>
@@ -262,7 +263,7 @@ export default function History() {
               </Select>
 
               <Select value={selectedFaculty} onValueChange={setSelectedFaculty}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[180px] md:w-[200px]">
                   <SelectValue placeholder="Fakulta" />
                 </SelectTrigger>
                 <SelectContent>

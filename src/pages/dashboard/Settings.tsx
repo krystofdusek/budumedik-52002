@@ -134,22 +134,26 @@ export default function Settings() {
 
     setResetLoading(true);
     try {
-      // Delete all user statistics, answers, and test results
+      // Delete all user data including statistics, answers, test results, and favorites
       await Promise.all([
         supabase.from('user_statistics').delete().eq('user_id', userId),
         supabase.from('user_answers').delete().eq('user_id', userId),
         supabase.from('test_results').delete().eq('user_id', userId),
+        supabase.from('favorite_questions').delete().eq('user_id', userId),
       ]);
 
       toast({
         title: "Úspěch",
-        description: "Vaše statistiky byly resetovány"
+        description: "Vaše statistiky a historie byly kompletně resetovány"
       });
+      
+      // Reload data to reflect changes
+      await loadData();
     } catch (error) {
       console.error('Error resetting statistics:', error);
       toast({
         title: "Chyba",
-        description: "Nepodařilo se resetovat statistiky",
+        description: "Nepodařilo se resetovat data",
         variant: "destructive"
       });
     } finally {

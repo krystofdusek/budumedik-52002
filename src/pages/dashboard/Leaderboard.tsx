@@ -76,7 +76,7 @@ export default function Leaderboard() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-4 md:p-8 bg-muted/50">
+        <main className="flex-1 p-3 sm:p-4 md:p-8 bg-muted/50">
           <div className="md:hidden mb-4 flex items-center justify-between">
             <MobileNav />
             <img 
@@ -85,10 +85,10 @@ export default function Leaderboard() {
               className="h-12 w-auto invert dark:invert-0" 
             />
           </div>
-          <div className="max-w-7xl mx-auto space-y-8">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Žebříček nejaktivnějších</h1>
-              <p className="text-muted-foreground">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
+            <div className="px-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Žebříček nejaktivnějších</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Soutěžte s ostatními studenty a sledujte svůj pokrok
               </p>
             </div>
@@ -122,40 +122,40 @@ export default function Leaderboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {leaderboard.map((entry) => (
-                      <div
-                        key={entry.rank}
-                        className={`flex items-center justify-between p-4 rounded-lg border ${
-                          entry.username === "Vy" 
-                            ? "bg-primary/5 border-primary" 
-                            : "bg-card"
-                        }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-muted">
-                            {getRankIcon(entry.rank) || (
-                              <span className="font-bold text-lg">{entry.rank}</span>
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-semibold">{entry.username}</p>
-                            <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                              <span>{entry.questionsAnswered} otázek</span>
-                              <span>•</span>
-                              <span>{entry.testsCompleted} testů</span>
-                              <span>•</span>
-                              <span>{entry.successRate}% úspěšnost</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-primary">
-                            {entry.activityScore}
-                          </p>
-                          <p className="text-sm text-muted-foreground">bodů</p>
-                        </div>
-                      </div>
-                    ))}
+                     {leaderboard.map((entry) => (
+                       <div
+                         key={entry.rank}
+                         className={`flex items-center justify-between p-3 sm:p-4 rounded-lg border ${
+                           entry.username === "Vy" 
+                             ? "bg-primary/5 border-primary" 
+                             : "bg-card"
+                         }`}
+                       >
+                         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
+                           <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-muted flex-shrink-0">
+                             {getRankIcon(entry.rank) || (
+                               <span className="font-bold text-base sm:text-lg">{entry.rank}</span>
+                             )}
+                           </div>
+                           <div className="min-w-0 flex-1">
+                             <p className="font-semibold text-sm sm:text-base truncate">{entry.username}</p>
+                             <div className="flex flex-wrap gap-1 sm:gap-2 md:gap-4 text-xs sm:text-sm text-muted-foreground mt-1">
+                               <span className="whitespace-nowrap">{entry.questionsAnswered} otázek</span>
+                               <span className="hidden sm:inline">•</span>
+                               <span className="whitespace-nowrap">{entry.testsCompleted} testů</span>
+                               <span className="hidden sm:inline">•</span>
+                               <span className="whitespace-nowrap">{entry.successRate}%</span>
+                             </div>
+                           </div>
+                         </div>
+                         <div className="text-right flex-shrink-0 ml-2">
+                           <p className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
+                             {entry.activityScore}
+                           </p>
+                           <p className="text-xs sm:text-sm text-muted-foreground">bodů</p>
+                         </div>
+                       </div>
+                     ))}
                   </div>
                 )}
               </CardContent>
