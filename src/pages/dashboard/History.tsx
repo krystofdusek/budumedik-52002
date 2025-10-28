@@ -57,6 +57,9 @@ export default function History() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedFaculty, setSelectedFaculty] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [currentWrongPage, setCurrentWrongPage] = useState(1);
+  const [currentFavPage, setCurrentFavPage] = useState(1);
+  const itemsPerPage = 40;
 
   useEffect(() => {
     loadFilters();
@@ -65,6 +68,8 @@ export default function History() {
 
   useEffect(() => {
     loadData();
+    setCurrentWrongPage(1);
+    setCurrentFavPage(1);
   }, [selectedSubject, selectedCategory, selectedFaculty]);
 
   const loadFilters = async () => {
@@ -297,7 +302,35 @@ export default function History() {
                     </CardContent>
                   </Card>
                 ) : (
-                  wrongAnswers.map((wa) => renderQuestion(wa.questions, "wrong"))
+                  <>
+                    {wrongAnswers
+                      .slice((currentWrongPage - 1) * itemsPerPage, currentWrongPage * itemsPerPage)
+                      .map((wa) => renderQuestion(wa.questions, "wrong"))}
+                    
+                    {wrongAnswers.length > itemsPerPage && (
+                      <div className="flex items-center justify-center gap-2 mt-6">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentWrongPage(p => Math.max(1, p - 1))}
+                          disabled={currentWrongPage === 1}
+                        >
+                          Předchozí
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          Stránka {currentWrongPage} z {Math.ceil(wrongAnswers.length / itemsPerPage)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentWrongPage(p => Math.min(Math.ceil(wrongAnswers.length / itemsPerPage), p + 1))}
+                          disabled={currentWrongPage === Math.ceil(wrongAnswers.length / itemsPerPage)}
+                        >
+                          Další
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </TabsContent>
 
@@ -311,7 +344,35 @@ export default function History() {
                     </CardContent>
                   </Card>
                 ) : (
-                  favorites.map((fav) => renderQuestion(fav.questions, "favorite", fav.id))
+                  <>
+                    {favorites
+                      .slice((currentFavPage - 1) * itemsPerPage, currentFavPage * itemsPerPage)
+                      .map((fav) => renderQuestion(fav.questions, "favorite", fav.id))}
+                    
+                    {favorites.length > itemsPerPage && (
+                      <div className="flex items-center justify-center gap-2 mt-6">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentFavPage(p => Math.max(1, p - 1))}
+                          disabled={currentFavPage === 1}
+                        >
+                          Předchozí
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                          Stránka {currentFavPage} z {Math.ceil(favorites.length / itemsPerPage)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentFavPage(p => Math.min(Math.ceil(favorites.length / itemsPerPage), p + 1))}
+                          disabled={currentFavPage === Math.ceil(favorites.length / itemsPerPage)}
+                        >
+                          Další
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </TabsContent>
             </Tabs>

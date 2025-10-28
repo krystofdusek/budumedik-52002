@@ -52,6 +52,8 @@ export default function AdminQuestions() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterFaculty, setFilterFaculty] = useState<string>('all');
   const [searchText, setSearchText] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 40;
 
   const [formData, setFormData] = useState({
     question_text: '',
@@ -188,6 +190,17 @@ export default function AdminQuestions() {
     if (searchText && !q.question_text.toLowerCase().includes(searchText.toLowerCase())) return false;
     return true;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedQuestions = filteredQuestions.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterSubject, filterCategory, filterFaculty, searchText]);
 
   const handleCheckboxChange = (option: string, checked: boolean) => {
     setFormData({
@@ -532,7 +545,7 @@ export default function AdminQuestions() {
               <CardHeader>
                 <CardTitle>Seznam otázek ({filteredQuestions.length} z {questions.length})</CardTitle>
                 <CardDescription>
-                  Filtrujte otázky podle různých kritérií
+                  Zobrazeno {startIndex + 1}-{Math.min(endIndex, filteredQuestions.length)} z {filteredQuestions.length} otázek
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -611,13 +624,14 @@ export default function AdminQuestions() {
                     </Button>
                   )}
                 </div>
-                {filteredQuestions.length === 0 ? (
+                {paginatedQuestions.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>{questions.length === 0 ? 'Zatím nebyly přidány žádné otázky' : 'Žádné otázky neodpovídají vybraným filtrům'}</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {filteredQuestions.map((q) => (
+                  <>
+                    <div className="space-y-4">
+                      {paginatedQuestions.map((q) => (
                       <Card key={q.id}>
                         <CardContent className="pt-6">
                           <div className="flex justify-between items-start gap-4">
@@ -658,6 +672,32 @@ export default function AdminQuestions() {
                       </Card>
                     ))}
                   </div>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-6">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Předchozí
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        Stránka {currentPage} z {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Další
+                      </Button>
+                    </div>
+                  )}
+                </>
                 )}
               </CardContent>
             </Card>
