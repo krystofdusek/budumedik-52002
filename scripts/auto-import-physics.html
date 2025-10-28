@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Auto Import Physics</title>
+  <style>
+    body { 
+      font-family: monospace; 
+      padding: 20px; 
+      background: #000; 
+      color: #0f0; 
+    }
+    .status { margin: 5px 0; }
+    .success { color: #0f0; }
+    .error { color: #f00; }
+  </style>
+</head>
+<body>
+  <h1>Automatický import fyziky</h1>
+  <div id="output"></div>
+
+  <script>
+    const EDGE_FUNCTION_URL = 'https://jcabdfmvjblzulnvvuso.supabase.co/functions/v1/import-2lf-questions';
+    
+    const files = [
+      { path: '/data/2lf/Atomová_fyzika.md', category: 'Atomová fyzika' },
+      { path: '/data/2lf/Elektřina_a_magnetismus.md', category: 'Elektřina a magnetismus' },
+      { path: '/data/2lf/Elektromagnetické_vlnění.md', category: 'Elektromagnetické vlnění' },
+      { path: '/data/2lf/Kmitání_vlnění_a_akustika.md', category: 'Kmitání vlnění a akustika' },
+      { path: '/data/2lf/Molekulová_fyzika.md', category: 'Molekulová fyzika' },
+      { path: '/data/2lf/Optika.md', category: 'Optika' },
+      { path: '/data/2lf/Termika.md', category: 'Termika' }
+    ];
+
+    function log(message, isError = false) {
+      const output = document.getElementById('output');
+      const div = document.createElement('div');
+      div.className = `status ${isError ? 'error' : 'success'}`;
+      div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      output.appendChild(div);
+      console.log(message);
+    }
+
+    async function importPhysics() {
+      log('🚀 Zahajuji import fyzikálních otázek...');
+      
+      try {
+        const fileContents = [];
+        
+        for (const file of files) {
+          log(`📖 Načítám ${file.category}...`);
+          const response = await fetch(file.path);
+          if (!response.ok) {
+            throw new Error(`Nepodařilo se načíst ${file.category}`);
+          }
+          const content = await response.text();
+          fileContents.push({ content, categoryName: file.category });
+          log(`✓ Načteno ${file.category} (${content.length} znaků)`);
+        }
+        
+        log('💾 Odesílám do databáze...');
+        
+        const response = await fetch(EDGE_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8'
+          },
+          body: JSON.stringify({ fileContents })
+        });
+        
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Chyba edge function: ${error}`);
+        }
+        
+        const data = await response.json();
+        
+        log('✅ Import dokončen!');
+        
+        if (data.results) {
+          data.results.forEach(result => {
+            if (result.error) {
+              log(`❌ ${result.category}: ${result.error}`, true);
+            } else {
+              log(`✓ ${result.category}: ${result.questionsImported} otázek naimportováno`);
+            }
+          });
+        }
+        
+        log('🎉 Vše hotovo!');
+        
+      } catch (error) {
+        log(`❌ Chyba: ${error.message}`, true);
+        console.error('Import error:', error);
+      }
+    }
+
+    // Auto-start on page load
+    window.addEventListener('DOMContentLoaded', importPhysics);
+  </script>
+</body>
+</html>
