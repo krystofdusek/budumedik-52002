@@ -280,7 +280,7 @@ export default function History() {
               </Select>
             </div>
 
-            <Tabs defaultValue="wrong" className="w-full">
+            <Tabs defaultValue="wrong" className="w-full px-1">
               <TabsList>
                 <TabsTrigger value="wrong">
                   <AlertCircle className="h-4 w-4 mr-2" />
