@@ -15,7 +15,6 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Red Hat Display', 'system-ui', '-apple-system', 'sans-serif'],
-        heading: ['Space Mono', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
