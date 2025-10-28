@@ -118,20 +118,38 @@ export default function AdminQuestions() {
     const { data: subjectsData } = await supabase.from('subjects').select('*');
     const { data: facultiesData } = await supabase.from('faculties').select('*');
     const { data: categoriesData } = await supabase.from('categories').select('*');
-    const { data: questionsData } = await supabase
-      .from('questions')
-      .select(`
-        *,
-        subjects(name),
-        categories(name),
-        faculties(name)
-      `)
-      .order('created_at', { ascending: false });
+    
+    // Load all questions without limit
+    let allQuestions: any[] = [];
+    let from = 0;
+    const pageSize = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data: questionsData } = await supabase
+        .from('questions')
+        .select(`
+          *,
+          subjects(name),
+          categories(name),
+          faculties(name)
+        `)
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1);
+
+      if (questionsData && questionsData.length > 0) {
+        allQuestions = [...allQuestions, ...questionsData];
+        from += pageSize;
+        hasMore = questionsData.length === pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
 
     setSubjects(subjectsData || []);
     setFaculties(sortFacultiesByCity(facultiesData || []));
     setCategories(categoriesData || []);
-    setQuestions(questionsData || []);
+    setQuestions(allQuestions);
   };
 
   const loadCategories = async (subjectId: string) => {
