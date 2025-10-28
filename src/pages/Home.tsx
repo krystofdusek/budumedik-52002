@@ -6,7 +6,7 @@ import { Brain, Target, TrendingUp, Zap } from "lucide-react";
 import logo from "@/assets/logo.png";
 const features = [{
   icon: Brain,
-  title: "AI Personalizované testy",
+  title: "AI testy",
   description: "Testy přizpůsobené vašim chybám a potřebám díky pokročilé AI technologii"
 }, {
   icon: Target,
