@@ -234,15 +234,15 @@ export default function History() {
               className="h-24 w-auto invert dark:invert-0" 
             />
           </div>
-          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
-            <div className="px-1">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8 px-1">
+            <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Historie</h1>
               <p className="text-sm sm:text-base text-muted-foreground">
                 Zobrazení špatně zodpovězených a oblíbených otázek
               </p>
             </div>
 
-            <div className="flex gap-2 sm:gap-4 flex-wrap px-1">
+            <div className="flex gap-2 sm:gap-4 flex-wrap">
               <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                 <SelectTrigger className="w-full sm:w-[180px] md:w-[200px]">
                   <SelectValue placeholder="Předmět" />
@@ -280,7 +280,7 @@ export default function History() {
               </Select>
             </div>
 
-            <Tabs defaultValue="wrong" className="w-full px-1">
+            <Tabs defaultValue="wrong" className="w-full">
               <TabsList>
                 <TabsTrigger value="wrong">
                   <AlertCircle className="h-4 w-4 mr-2" />
