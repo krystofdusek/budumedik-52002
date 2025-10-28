@@ -28,6 +28,8 @@ export default function TestGenerators() {
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [favoriteFaculty, setFavoriteFaculty] = useState<string>("");
+  const [hasHistoricalData, setHasHistoricalData] = useState<boolean | null>(null);
+  const [checkingHistory, setCheckingHistory] = useState(false);
   useEffect(() => {
     loadFilters();
   }, []);
@@ -36,6 +38,12 @@ export default function TestGenerators() {
       loadCategories(selectedSubject);
     }
   }, [selectedSubject]);
+
+  useEffect(() => {
+    if (selectedTestType === 'ai' && favoriteFaculty) {
+      checkHistoricalData();
+    }
+  }, [selectedTestType, selectedSubject, selectedCategory, favoriteFaculty]);
   const loadFilters = async () => {
     const {
       data: subjectsData
@@ -67,6 +75,38 @@ export default function TestGenerators() {
       data
     } = await supabase.from('categories').select('*').eq('subject_id', subjectId);
     setCategories(data || []);
+  };
+
+  const checkHistoricalData = async () => {
+    if (!favoriteFaculty) return;
+    
+    setCheckingHistory(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      let query = supabase
+        .from('user_answers')
+        .select('id, questions!inner(faculty_id, subject_id, category_id)', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('questions.faculty_id', favoriteFaculty);
+
+      if (selectedSubject && selectedSubject !== 'all') {
+        query = query.eq('questions.subject_id', selectedSubject);
+      }
+
+      if (selectedCategory && selectedCategory !== 'all') {
+        query = query.eq('questions.category_id', selectedCategory);
+      }
+
+      const { count } = await query;
+      setHasHistoricalData((count || 0) > 0);
+    } catch (error) {
+      console.error('Error checking historical data:', error);
+      setHasHistoricalData(null);
+    } finally {
+      setCheckingHistory(false);
+    }
   };
   const createClassicTest = async () => {
     if (!selectedSubject || !selectedFaculty) {
@@ -388,6 +428,37 @@ export default function TestGenerators() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {selectedTestType === 'ai' && favoriteFaculty && (
+                    <div className="p-4 rounded-lg border">
+                      {checkingHistory ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Kontrola historických dat...
+                        </div>
+                      ) : hasHistoricalData === false ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
+                            <Brain className="h-5 w-5" />
+                            <span className="font-medium">Test bez personalizace</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Pro vybrané filtry nemáte žádná historická data. Test bude vygenerován bez personalizace na vaše slabé stránky.
+                          </p>
+                        </div>
+                      ) : hasHistoricalData === true ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
+                            <Sparkles className="h-5 w-5" />
+                            <span className="font-medium">Personalizovaný test</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Test bude zaměřen na otázky podobné těm, ve kterých jste chybovali
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
                 <Button className="w-full" onClick={selectedTestType === 'classic' ? createClassicTest : createAITest} disabled={loading || selectedTestType === 'classic' && (!selectedSubject || !selectedFaculty) || selectedTestType === 'ai' && !favoriteFaculty}>
