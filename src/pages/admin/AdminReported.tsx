@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Trash2 } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 interface Report {
   id: string;
@@ -258,10 +259,17 @@ export default function AdminReported() {
 
   return (
     <SidebarProvider>
-      <MobileNav />
       <div className="min-h-screen flex w-full">
         <AppSidebar isAdmin={true} />
-        <main className="flex-1 p-8 bg-muted/50">
+        <main className="flex-1 p-4 md:p-8 bg-muted/50">
+          <div className="md:hidden mb-4 flex items-center justify-between">
+            <MobileNav isAdmin={true} />
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-12 w-auto invert dark:invert-0" 
+            />
+          </div>
           <div className="max-w-7xl mx-auto space-y-8">
             <div>
               <h1 className="text-4xl font-bold mb-2">Nahlášené otázky</h1>

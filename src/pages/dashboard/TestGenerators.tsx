@@ -192,7 +192,15 @@ export default function TestGenerators() {
     return <SidebarProvider>
         <div className="min-h-screen flex w-full">
           <AppSidebar />
-          <main className="flex-1 p-8 bg-muted/50">
+          <main className="flex-1 p-4 md:p-8 bg-muted/50">
+            <div className="md:hidden mb-4 flex items-center justify-between">
+              <MobileNav />
+              <img 
+                src={logo} 
+                alt="Logo" 
+                className="h-12 w-auto invert dark:invert-0" 
+              />
+            </div>
             <div className="max-w-7xl mx-auto space-y-8">
               <div>
                 <h1 className="text-4xl font-bold mb-2">Generátory testů</h1>
@@ -253,7 +261,15 @@ export default function TestGenerators() {
   return <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-8 bg-muted/50">
+        <main className="flex-1 p-4 md:p-8 bg-muted/50">
+          <div className="md:hidden mb-4 flex items-center justify-between">
+            <MobileNav />
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-12 w-auto invert dark:invert-0" 
+            />
+          </div>
           <div className="max-w-4xl mx-auto space-y-8">
             {loading && selectedTestType === 'ai' ? (
               <LoadingWithFacts message="Generujeme AI otázky pro vás..." />

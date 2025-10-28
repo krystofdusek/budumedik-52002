@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { sortFacultiesByCity } from "@/lib/facultySort";
+import logo from "@/assets/logo.png";
 
 const questionSchema = z.object({
   question_text: z.string().trim().min(10, "Otázka musí mít alespoň 10 znaků").max(1000, "Otázka může mít maximálně 1000 znaků"),
@@ -251,10 +252,17 @@ export default function AdminQuestions() {
 
   return (
     <SidebarProvider>
-      <MobileNav />
       <div className="min-h-screen flex w-full">
         <AppSidebar isAdmin={true} />
-        <main className="flex-1 p-8 bg-muted/50">
+        <main className="flex-1 p-4 md:p-8 bg-muted/50">
+          <div className="md:hidden mb-4 flex items-center justify-between">
+            <MobileNav isAdmin={true} />
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-12 w-auto invert dark:invert-0" 
+            />
+          </div>
           <div className="max-w-7xl mx-auto space-y-8">
             <div className="flex items-center justify-between">
               <div>

@@ -4,6 +4,7 @@ import { MobileNav } from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Target, Award, Users, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 type SubjectStats = {
@@ -170,10 +171,17 @@ export default function Progress() {
     }
   };
   return <SidebarProvider>
-      <MobileNav />
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-8 bg-muted/50">
+        <main className="flex-1 p-4 md:p-8 bg-muted/50">
+          <div className="md:hidden mb-4 flex items-center justify-between">
+            <MobileNav />
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-12 w-auto invert dark:invert-0" 
+            />
+          </div>
           <div className="max-w-7xl mx-auto space-y-8">
             <div>
               <h1 className="text-4xl font-bold mb-2">Můj pokrok</h1>

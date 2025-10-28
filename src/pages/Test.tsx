@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight, Flag, Heart } from "lucide-react";
+import logo from "@/assets/logo.png";
+import { MobileNav } from "@/components/MobileNav";
 
 export default function Test() {
   const location = useLocation();
@@ -335,6 +337,14 @@ export default function Test() {
 
   return (
     <div className="min-h-screen bg-muted/50 p-4 md:p-8 animate-fade-in">
+      <div className="md:hidden mb-4 flex items-center justify-between">
+        <MobileNav />
+        <img 
+          src={logo} 
+          alt="Logo" 
+          className="h-12 w-auto invert dark:invert-0" 
+        />
+      </div>
       <div className="max-w-4xl mx-auto space-y-6">
         {funFact && (
           <Card className="bg-primary/5 border-primary/20 animate-scale-in">

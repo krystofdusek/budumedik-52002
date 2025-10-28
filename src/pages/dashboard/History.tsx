@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, Heart, Star } from "lucide-react";
 import { sortFacultiesByCity } from "@/lib/facultySort";
+import logo from "@/assets/logo.png";
 
 interface Question {
   id: string;
@@ -216,10 +217,17 @@ export default function History() {
 
   return (
     <SidebarProvider>
-      <MobileNav />
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <main className="flex-1 p-8 bg-muted/50">
+        <main className="flex-1 p-4 md:p-8 bg-muted/50">
+          <div className="md:hidden mb-4 flex items-center justify-between">
+            <MobileNav />
+            <img 
+              src={logo} 
+              alt="Logo" 
+              className="h-12 w-auto invert dark:invert-0" 
+            />
+          </div>
           <div className="max-w-7xl mx-auto space-y-8">
             <div>
               <h1 className="text-4xl font-bold mb-2">Historie</h1>
