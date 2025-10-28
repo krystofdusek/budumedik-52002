@@ -21,6 +21,7 @@ const CATEGORY_MAPPING: Record<string, string> = {
   'Obecná a populační genetika': '812b99e9-c015-465a-9d34-1c6a76358a01',
   'Úvod do biologie': 'abfb7dba-ac86-41fb-8f39-0d169c6fc19e',
   'Historie medicíny': '87aba960-3e79-41b6-92dd-050c3646c907',
+  'Mikrobiologie a virologie': '66826462-beeb-4676-8941-42d4522a704f',
 }
 
 interface ParsedQuestion {

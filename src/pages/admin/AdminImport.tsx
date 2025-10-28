@@ -18,7 +18,8 @@ const FILE_MAPPINGS = [
   { path: '/data/2lf/Molekulární_biologie.md', category: 'Molekulární biologie' },
   { path: '/data/2lf/Obecná_a_populační_genetika.md', category: 'Obecná a populační genetika' },
   { path: '/data/2lf/Úvod_do_biologie.md', category: 'Úvod do biologie' },
-  { path: '/data/2lf/Historie_medicíny.md', category: 'Historie medicíny' }
+  { path: '/data/2lf/Historie_medicíny.md', category: 'Historie medicíny' },
+  { path: '/data/2lf/Bakteriologie_a_virologie.md', category: 'Mikrobiologie a virologie' }
 ];
 
 export default function AdminImport() {
