@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Brain, FileText, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { LoadingWithFacts } from "@/components/LoadingWithFacts";
 export default function TestGenerators() {
   const navigate = useNavigate();
   const {
@@ -146,6 +147,7 @@ export default function TestGenerators() {
           description: "Nepodařilo se vygenerovat otázky",
           variant: "destructive"
         });
+        setLoading(false);
         return;
       }
       navigate('/test', {
@@ -180,7 +182,6 @@ export default function TestGenerators() {
           variant: "destructive"
         });
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -251,24 +252,28 @@ export default function TestGenerators() {
         <AppSidebar />
         <main className="flex-1 p-8 bg-muted/50">
           <div className="max-w-4xl mx-auto space-y-8">
-            <div>
-              <Button variant="ghost" onClick={() => {
-              setSelectedTestType(null);
-              setSelectedSubject("");
-              setSelectedCategory("");
-              setSelectedFaculty("");
-            }} className="mb-4">
-                ← Zpět na výběr typu
-              </Button>
-              <h1 className="text-4xl font-bold mb-2">
-                {selectedTestType === 'classic' ? 'Klasický test' : 'AI Personalizovaný test'}
-              </h1>
-              <p className="text-muted-foreground">
-                Nastavte parametry testu
-              </p>
-            </div>
+            {loading && selectedTestType === 'ai' ? (
+              <LoadingWithFacts message="Generujeme AI otázky pro vás..." />
+            ) : (
+              <>
+                <div>
+                  <Button variant="ghost" onClick={() => {
+                  setSelectedTestType(null);
+                  setSelectedSubject("");
+                  setSelectedCategory("");
+                  setSelectedFaculty("");
+                }} className="mb-4">
+                    ← Zpět na výběr typu
+                  </Button>
+                  <h1 className="text-4xl font-bold mb-2">
+                    {selectedTestType === 'classic' ? 'Klasický test' : 'AI Personalizovaný test'}
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Nastavte parametry testu
+                  </p>
+                </div>
 
-            <Card>
+                <Card>
               <CardHeader>
                 <CardTitle>Konfigurace testu</CardTitle>
                 <CardDescription>
@@ -364,6 +369,8 @@ export default function TestGenerators() {
                 </Button>
               </CardContent>
             </Card>
+              </>
+            )}
           </div>
         </main>
       </div>

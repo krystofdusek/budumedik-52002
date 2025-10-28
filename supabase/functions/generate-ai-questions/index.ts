@@ -92,7 +92,7 @@ serve(async (req) => {
       }
     }
 
-    // Fetch sample questions from database for context
+    // Fetch sample questions from database for context (reduced for speed)
     let sampleQuestionsQuery = supabase
       .from('questions')
       .select('*')
@@ -106,7 +106,7 @@ serve(async (req) => {
       sampleQuestionsQuery = sampleQuestionsQuery.eq('category_id', categoryId);
     }
 
-    const { data: sampleQuestions } = await sampleQuestionsQuery.limit(3);
+    const { data: sampleQuestions } = await sampleQuestionsQuery.limit(1);
 
     // Calculate weak areas
     const categoryStats: Record<string, { correct: number; total: number }> = {};
@@ -150,39 +150,27 @@ serve(async (req) => {
       }
     }
 
-    const systemPrompt = `Jsi expert na tvorbu přijímacích otázek na lékařské fakulty v České republice. 
-Tvým úkolem je vytvořit autentické a náročné otázky, které odpovídají reálným přijímacím zkouškám.
+    const systemPrompt = `Jsi expert na tvorbu přijímacích otázek na lékařské fakulty v ČR.
 
-SPECIFIKACE FAKULTY ${faculty.code}:
-- Název: ${faculty.name}
+FAKULTA: ${faculty.name} (${faculty.code})
 - Možnost E: ${faculty.has_option_e ? 'ANO' : 'NE'}
-- Více správných odpovědí: ${faculty.allows_multiple_correct ? 'ANO' : 'NE'}
+- Více správných: ${faculty.allows_multiple_correct ? 'ANO' : 'NE'}
 
 ${subjectInfo}
 ${categoryInfo}
 
 ${subjects.some(s => s.name === 'Fyzika') && (faculty.code === '3LF' || faculty.code === 'LFHK') ? 
-  'DŮLEŽITÉ: Pro tuto fakultu jsou fyzikální otázky velmi náročné a obsahují složité výpočty a příklady. Zaměř se na matematicky náročné úlohy.' : ''}
+  'DŮLEŽITÉ: Fyzika - náročné výpočty a příklady.' : ''}
 
 ${!subjectId && !categoryId ? 
-  'DŮLEŽITÉ: Vytvoř rovnoměrnou distribuci otázek ze VŠECH dostupných předmětů a kategorií. Zajisti různorodost a pokrytí všech oblastí.' : ''}
+  'DŮLEŽITÉ: Rovnoměrně distribuuj otázky mezi všechny předměty a kategorie.' : ''}
 
-${sampleQuestions && sampleQuestions.length > 0 ? 
-  `PŘÍKLADY EXISTUJÍCÍCH OTÁZEK PRO INSPIRACI:\n${sampleQuestions.map((q: any, i: number) => 
-    `${i + 1}. ${q.question_text}\n   A) ${q.option_a}\n   B) ${q.option_b}\n   C) ${q.option_c}\n   D) ${q.option_d}${q.option_e ? `\n   E) ${q.option_e}` : ''}\n   Správné: ${q.correct_answers.join(', ')}`
-  ).join('\n\n')}` : ''}
-
-${weakAreas.length > 0 ? `SLABÉ STRÁNKY UŽIVATELE: Zaměř se více na kategorie, kde má student problémy.` : ''}
-
-Vytvoř ${count} originálních otázek. Každá otázka musí být:
-1. Autentická a odpovídající reálným přijímačkám
-2. S jednou nebo více správnými odpověďmi (podle specifikace fakulty)
-3. S vysvětlením správné odpovědi
-4. Vhodné obtížnosti pro medicínské studium
-${!subjectId ? '5. Rovnoměrně distribuovaná mezi předměty' : ''}
-${!categoryId && subjectId ? '6. Rovnoměrně distribuovaná mezi kategorie' : ''}
-
-Pro fyziku na 3LF/LFHK vytvárej hlavně složité příklady s výpočty.`;
+Vytvoř ${count} originálních otázek:
+- Autentické, odpovídající reálným přijímačkám
+- S vysvětlením správné odpovědi
+- Vhodné obtížnosti pro medicínu
+${!subjectId ? '- Rovnoměrně mezi předměty' : ''}
+${!categoryId && subjectId ? '- Rovnoměrně mezi kategorie' : ''}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -194,7 +182,7 @@ Pro fyziku na 3LF/LFHK vytvárej hlavně složité příklady s výpočty.`;
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Vytvoř ${count} otázek ve formátu JSON array s těmito poli: question_text, option_a, option_b, option_c, option_d${faculty.has_option_e ? ', option_e' : ''}, correct_answers (array), explanation` }
+          { role: 'user', content: `Vytvoř ${count} otázek ve formátu JSON array: question_text, option_a, option_b, option_c, option_d${faculty.has_option_e ? ', option_e' : ''}, correct_answers (array), explanation` }
         ],
         tools: [
           {
