@@ -202,7 +202,7 @@ serve(async (req) => {
           category_id: mapping.categoryId,
           faculty_id: FACULTY_2LF_ID,
           is_ai_generated: false,
-          year: q.question_number
+          year: Number.isFinite(q.question_number) ? Math.trunc(q.question_number) : null
         }))
         
         const { error } = await supabaseClient
