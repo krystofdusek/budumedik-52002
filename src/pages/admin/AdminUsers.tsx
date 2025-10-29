@@ -9,10 +9,20 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Loader2, Crown, Users, Calendar } from "lucide-react";
+import { Loader2, Crown, Users, Calendar, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -36,6 +46,8 @@ export default function AdminUsers() {
   const queryClient = useQueryClient();
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingPremiumDate, setEditingPremiumDate] = useState<{userId: string, date: string} | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
 
   useEffect(() => {
     checkAdminStatus();
@@ -221,6 +233,40 @@ export default function AdminUsers() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      // First delete subscription
+      const { error: subError } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('user_id', userId);
+
+      if (subError) throw subError;
+
+      // Then delete from auth.users using admin API
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (authError) throw authError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      toast({
+        title: "Úspěch",
+        description: "Uživatel byl smazán",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting user:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se smazat uživatele. Ujistěte se, že máte admin práva.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -269,6 +315,7 @@ export default function AdminUsers() {
                           <TableHead>Reset za</TableHead>
                           <TableHead>Změnit členství</TableHead>
                           <TableHead>Upravit testy</TableHead>
+                          <TableHead>Akce</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -413,6 +460,18 @@ export default function AdminUsers() {
                                   </Select>
                                 )}
                               </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    setUserToDelete({ id: user.id, email: user.email });
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           );
                         })}
@@ -422,6 +481,36 @@ export default function AdminUsers() {
                 )}
               </CardContent>
             </Card>
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Opravdu chcete smazat tento účet?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tato akce je nevratná. Účet {userToDelete?.email} bude trvale smazán včetně všech jeho dat.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setUserToDelete(null)}>
+                    Zrušit
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (userToDelete) {
+                        deleteUserMutation.mutate(userToDelete.id);
+                      }
+                    }}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {deleteUserMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      'Smazat účet'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </main>
       </div>
