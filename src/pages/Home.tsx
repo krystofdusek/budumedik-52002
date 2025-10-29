@@ -51,9 +51,9 @@ export default function Home() {
                     Začít se učit
                   </Button>
                 </Link>
-                <Link to="/contact">
+                <Link to="/about">
                   <Button size="lg" variant="outline" className="text-lg rounded-full px-8">
-                    Kontaktovat nás
+                    Více o nás
                   </Button>
                 </Link>
               </div>
@@ -143,9 +143,6 @@ export default function Home() {
               </Link>
               <Link to="/terms" className="hover:text-primary transition-colors">
                 Obchodní podmínky
-              </Link>
-              <Link to="/contact" className="hover:text-primary transition-colors">
-                Kontakt
               </Link>
             </div>
           </div>
