@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { Navbar } from "@/components/Navbar";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -86,10 +86,10 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <div className="min-h-screen flex items-center justify-center bg-muted/50 p-4 pt-24">
       
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
@@ -182,6 +182,7 @@ export default function Auth() {
           </Tabs>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

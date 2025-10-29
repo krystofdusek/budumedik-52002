@@ -59,11 +59,11 @@ export default function Home() {
               </div>
               
               {/* App Mockup with fade effect */}
-              <div className="mt-32 mb-32 animate-fade-in px-4 md:px-8 relative" style={{ animationDelay: "0.5s" }}>
+              <div className="mt-32 mb-32 animate-fade-in px-2 sm:px-4 md:px-8 relative" style={{ animationDelay: "0.5s" }}>
                 <img 
                   src={mockupImage} 
                   alt="BioMed platform mockup" 
-                  className="w-full h-auto rounded-3xl transition-all duration-500"
+                  className="w-full h-auto rounded-xl sm:rounded-2xl md:rounded-3xl transition-all duration-500"
                 />
                 <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
               </div>
