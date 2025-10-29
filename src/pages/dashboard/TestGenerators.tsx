@@ -326,7 +326,7 @@ export default function TestGenerators() {
     }
   };
 
-  const isLocked = subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0;
+  const isLocked = subscription && subscription.subscription_type === 'free' && subscription.tests_remaining === 0;
 
   if (!selectedTestType) {
     return (

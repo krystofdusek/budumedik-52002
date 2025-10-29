@@ -252,12 +252,12 @@ export default function Dashboard() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <Card 
                     className={`hover:shadow-lg transition-shadow cursor-pointer ${
-                      subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0 
+                      subscription && subscription.subscription_type === 'free' && subscription.tests_remaining === 0
                         ? 'opacity-50' 
                         : ''
                     }`}
                     onClick={() => {
-                      if (subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0) {
+                      if (subscription && subscription.subscription_type === 'free' && subscription.tests_remaining === 0) {
                         setUpgradeDialogOpen(true);
                       } else {
                         navigate('/dashboard/tests');
@@ -269,7 +269,7 @@ export default function Dashboard() {
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                           <FileText className="h-5 w-5 text-primary" />
                         </div>
-                        {subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0 && (
+                        {subscription && subscription.subscription_type === 'free' && subscription.tests_remaining === 0 && (
                           <Lock className="h-5 w-5 text-muted-foreground" />
                         )}
                       </div>
@@ -282,12 +282,12 @@ export default function Dashboard() {
 
                   <Card 
                     className={`hover:shadow-lg transition-shadow border-primary cursor-pointer ${
-                      subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0 
+                      subscription && subscription.subscription_type === 'free' && subscription.tests_remaining === 0
                         ? 'opacity-50' 
                         : ''
                     }`}
                     onClick={() => {
-                      if (subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0) {
+                      if (subscription && subscription.subscription_type === 'free' && subscription.tests_remaining === 0) {
                         setUpgradeDialogOpen(true);
                       } else {
                         navigate('/dashboard/tests');
@@ -299,7 +299,7 @@ export default function Dashboard() {
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Sparkles className="h-5 w-5 text-primary" />
                         </div>
-                        {subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0 && (
+                        {subscription && subscription.subscription_type === 'free' && subscription.tests_remaining === 0 && (
                           <Lock className="h-5 w-5 text-muted-foreground" />
                         )}
                       </div>
