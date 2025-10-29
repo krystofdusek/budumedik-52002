@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo.png";
@@ -40,26 +40,30 @@ export function Navbar() {
         {/* Mobile Menu */}
         <div className="flex md:hidden items-center gap-2">
           <ThemeToggle />
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
+          <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Menu className="h-5 w-5" />
               </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-64">
-              <div className="flex flex-col gap-4 mt-8">
-                <Link to="/" onClick={() => setOpen(false)}>
-                  <Button variant="ghost" className="w-full justify-start">Domů</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link to="/" onClick={() => setOpen(false)} className="cursor-pointer">
+                  Domů
                 </Link>
-                <Link to="/contact" onClick={() => setOpen(false)}>
-                  <Button variant="ghost" className="w-full justify-start">Kontakt</Button>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/contact" onClick={() => setOpen(false)} className="cursor-pointer">
+                  Kontakt
                 </Link>
-                <Link to="/auth" onClick={() => setOpen(false)}>
-                  <Button variant="default" className="w-full justify-start">Přihlásit se</Button>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/auth" onClick={() => setOpen(false)} className="cursor-pointer">
+                  Přihlásit se
                 </Link>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </nav>
