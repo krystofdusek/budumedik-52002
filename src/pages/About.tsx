@@ -31,15 +31,14 @@ export default function About() {
                     efektivní nástroje pro studium a maximalizovat jejich šance na úspěch.
                   </p>
                   <p>
-                    Jsem studentem 2. ročníku 3. lékařské fakulty Univerzity Karlovy a společně 
-                    se svým týmem jsme si sami prošli přijímacími zkouškami na medicínu. Dobře víme, 
-                    jak náročné dokážou být — proto jsme vytvořili platformu Budu Medik, která vznikla 
-                    od studentů pro studenty.
+                    Jsme studenti 3. lékařské fakulty Univerzity Karlovy a společně jsme si sami 
+                    prošli přijímacími zkouškami na medicínu. Dobře víme, jak náročné dokážou být — 
+                    proto jsme vytvořili platformu Budu Medik, která vznikla od studentů pro studenty.
                   </p>
                   <p>
                     Naše testy, otázky a funkce jsou navržené na míru uchazečům o medicínu – vycházíme 
                     z reálných testů, nejčastějších chyb a zkušeností, které jsme sami nasbírali. Cílem 
-                    je, aby ses mohl připravovat efektivně, přehledně a s jistotou, že vše odpovídá 
+                    je, abyste se mohli připravovat efektivně, přehledně a s jistotou, že vše odpovídá 
                     skutečným požadavkům přijímaček.
                   </p>
                 </div>
