@@ -29,6 +29,7 @@ const items = [
 const adminItems = [
   { title: "Správa otázek", url: "/admin/questions", icon: Shield },
   { title: "Nahlášené otázky", url: "/admin/reported", icon: FileText },
+  { title: "Správa uživatelů", url: "/admin/users", icon: Upload },
 ];
 
 export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {}) {

@@ -284,7 +284,16 @@ export default function Settings() {
                           </div>
                         </div>
                       </div>
-                      <Button className="w-full" size="lg">
+                      <Button 
+                        className="w-full" 
+                        size="lg"
+                        onClick={() => {
+                          toast({
+                            title: "Připravujeme platební bránu",
+                            description: "Platební systém bude brzy dostupný",
+                          });
+                        }}
+                      >
                         <Crown className="mr-2 h-4 w-4" />
                         Upgrade na Premium
                       </Button>
