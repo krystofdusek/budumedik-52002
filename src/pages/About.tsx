@@ -24,11 +24,25 @@ export default function About() {
                 <CardTitle>Naše mise</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  MedPrep je moderní platforma využívající umělou inteligenci pro přípravu 
-                  na přijímací zkoušky na lékařské fakulty. Naším cílem je poskytnout studentům 
-                  efektivní nástroje pro studium a maximalizovat jejich šance na úspěch.
-                </p>
+                <div className="space-y-4 text-muted-foreground leading-relaxed">
+                  <p>
+                    MedPrep je moderní platforma využívající umělou inteligenci pro přípravu 
+                    na přijímací zkoušky na lékařské fakulty. Naším cílem je poskytnout studentům 
+                    efektivní nástroje pro studium a maximalizovat jejich šance na úspěch.
+                  </p>
+                  <p>
+                    Jsem studentem 2. ročníku 3. lékařské fakulty Univerzity Karlovy a společně 
+                    se svým týmem jsme si sami prošli přijímacími zkouškami na medicínu. Dobře víme, 
+                    jak náročné dokážou být — proto jsme vytvořili platformu Budu Medik, která vznikla 
+                    od studentů pro studenty.
+                  </p>
+                  <p>
+                    Naše testy, otázky a funkce jsou navržené na míru uchazečům o medicínu – vycházíme 
+                    z reálných testů, nejčastějších chyb a zkušeností, které jsme sami nasbírali. Cílem 
+                    je, aby ses mohl připravovat efektivně, přehledně a s jistotou, že vše odpovídá 
+                    skutečným požadavkům přijímaček.
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
