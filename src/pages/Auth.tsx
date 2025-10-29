@@ -94,7 +94,7 @@ export default function Auth() {
               <GraduationCap className="h-6 w-6 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Vítejte v MedPrep</CardTitle>
+          <CardTitle className="text-2xl">Vítejte v BioMed!</CardTitle>
           <CardDescription>
             Přihlaste se nebo vytvořte nový účet
           </CardDescription>
