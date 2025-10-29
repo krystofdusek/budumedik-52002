@@ -3,13 +3,15 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import logo from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, FileText, TrendingUp, Crown, Calendar } from "lucide-react";
+import { Brain, FileText, TrendingUp, Crown, Calendar, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -145,7 +147,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="hover-scale transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -177,6 +179,18 @@ export default function Dashboard() {
                     <FileText className="h-8 w-8 text-primary" />
                   </div>
                   <CardDescription>Zodpovězené otázky</CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card 
+                className="hover-scale transition-all cursor-pointer"
+                onClick={() => navigate('/dashboard/progress')}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <Users className="h-8 w-8 text-primary" />
+                  </div>
+                  <CardDescription>Porovnání s fakultou</CardDescription>
                 </CardHeader>
               </Card>
             </div>

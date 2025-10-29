@@ -2,11 +2,13 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Target, Award, Users, Heart } from "lucide-react";
+import { TrendingUp, Target, Award, Users, Heart, Lock, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { UpgradeDialog } from "@/components/UpgradeDialog";
+import { useQuery } from "@tanstack/react-query";
 type SubjectStats = {
   subjectName: string;
   totalQuestions: number;
@@ -33,6 +35,24 @@ export default function Progress() {
   const [subjectStats, setSubjectStats] = useState<SubjectStats[]>([]);
   const [facultyComparison, setFacultyComparison] = useState<FacultyComparison | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string>("");
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+
+  const { data: subscription } = useQuery({
+    queryKey: ["user-subscription", userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from("user_subscriptions")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
   useEffect(() => {
     loadProgress();
   }, []);
@@ -44,6 +64,8 @@ export default function Progress() {
         }
       } = await supabase.auth.getUser();
       if (!user) return;
+      
+      setUserId(user.id);
 
       // Load user statistics
       const {
@@ -170,10 +192,14 @@ export default function Progress() {
       console.error('Error in loadFacultyComparison:', error);
     }
   };
+  const isPremium = subscription?.subscription_type === 'premium';
+
   return <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <main className="flex-1 p-4 md:p-8 bg-muted/50">
+          <UpgradeDialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen} />
+          
           <div className="md:hidden mb-4 flex items-center justify-between">
             <MobileNav />
             <img 
@@ -250,7 +276,8 @@ export default function Progress() {
                     
                   </>}
 
-                {facultyComparison && <Card>
+                {isPremium ? (
+                  facultyComparison && <Card>
                     <CardHeader>
                       <div className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
@@ -305,7 +332,43 @@ export default function Progress() {
                           </div>
                         </div>}
                     </CardContent>
-                  </Card>}
+                  </Card>
+                ) : (
+                  <Card 
+                    className="opacity-75 cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setUpgradeDialogOpen(true)}
+                  >
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          <CardTitle>Porovnání s fakultou</CardTitle>
+                        </div>
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <CardDescription>
+                        Premium funkce - Porovnejte se s ostatními studenty
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="relative overflow-hidden rounded-lg border bg-muted/50 p-8">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
+                        <div className="relative space-y-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Crown className="h-4 w-4" />
+                            <span>Dostupné pouze pro Premium členy</span>
+                          </div>
+                          <ul className="space-y-2 text-sm text-muted-foreground">
+                            <li>• Porovnání vaší úspěšnosti s průměrem fakulty</li>
+                            <li>• Statistiky podle jednotlivých předmětů</li>
+                            <li>• Identifikace slabých oblastí</li>
+                            <li>• Sledování vašeho pokroku v čase</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </>}
           </div>
         </main>
