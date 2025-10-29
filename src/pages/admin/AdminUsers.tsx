@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -35,9 +36,9 @@ import {
 interface UserWithSubscription {
   id: string;
   email: string;
+  name: string | null;
   subscription_type: 'free' | 'premium';
   tests_remaining: number;
-  reset_date: string;
   premium_until: string | null;
 }
 
@@ -49,6 +50,8 @@ export default function AdminUsers() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserWithSubscription | null>(null);
 
   useEffect(() => {
     checkAdminStatus();
@@ -74,7 +77,7 @@ export default function AdminUsers() {
       // First get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email');
+        .select('id, email, name');
       
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
@@ -98,9 +101,9 @@ export default function AdminUsers() {
         return {
           id: profile.id,
           email: profile.email,
+          name: profile.name,
           subscription_type: subscription?.subscription_type || 'free',
           tests_remaining: subscription?.tests_remaining ?? 0,
-          reset_date: subscription?.reset_date || '',
           premium_until: subscription?.premium_until || null,
         };
       });
@@ -163,18 +166,10 @@ export default function AdminUsers() {
     },
   });
 
-  const getDaysUntilReset = (resetDate: string) => {
-    if (!resetDate) return null;
-    const reset = new Date(resetDate);
-    const now = new Date();
-    const diffTime = reset.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  };
-
   // Filter users based on search query
   const filteredUsers = users?.filter(user => 
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const updateTestsMutation = useMutation({
@@ -312,7 +307,7 @@ export default function AdminUsers() {
               <CardContent>
                 <div className="mb-4">
                   <Input
-                    placeholder="Hledat podle emailu..."
+                    placeholder="Hledat podle jména nebo emailu..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="max-w-sm"
@@ -331,159 +326,41 @@ export default function AdminUsers() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>Jméno</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Členství</TableHead>
-                          <TableHead>Premium do</TableHead>
-                          <TableHead>Zbývající testy</TableHead>
-                          <TableHead>Reset za</TableHead>
-                          <TableHead>Změnit členství</TableHead>
-                          <TableHead>Upravit testy</TableHead>
                           <TableHead>Akce</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredUsers?.map((user) => {
-                          const daysUntilReset = getDaysUntilReset(user.reset_date);
-                          const isEditingDate = editingPremiumDate?.userId === user.id;
-                          
-                          return (
-                            <TableRow key={user.id}>
-                              <TableCell className="font-medium">{user.email}</TableCell>
-                              <TableCell>
-                                <Badge variant={user.subscription_type === 'premium' ? 'default' : 'secondary'}>
-                                  {user.subscription_type === 'premium' ? (
-                                    <>
-                                      <Crown className="h-3 w-3 mr-1" />
-                                      Premium
-                                    </>
-                                  ) : (
-                                    'Free'
-                                  )}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
+                        {filteredUsers?.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.name || '-'}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>
+                              <Badge variant={user.subscription_type === 'premium' ? 'default' : 'secondary'}>
                                 {user.subscription_type === 'premium' ? (
-                                  <div className="space-y-2">
-                                    {isEditingDate ? (
-                                      <div className="flex gap-2 items-center">
-                                        <Input
-                                          type="date"
-                                          value={editingPremiumDate.date}
-                                          onChange={(e) => setEditingPremiumDate({ userId: user.id, date: e.target.value })}
-                                          className="w-40"
-                                          min={format(new Date(), 'yyyy-MM-dd')}
-                                        />
-                                        <Button
-                                          size="sm"
-                                          onClick={() => {
-                                            if (editingPremiumDate.date) {
-                                              updatePremiumDateMutation.mutate({
-                                                userId: user.id,
-                                                premiumUntil: new Date(editingPremiumDate.date).toISOString()
-                                              });
-                                            }
-                                          }}
-                                          disabled={updatePremiumDateMutation.isPending}
-                                        >
-                                          {updatePremiumDateMutation.isPending ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                          ) : (
-                                            'Uložit'
-                                          )}
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => setEditingPremiumDate(null)}
-                                        >
-                                          Zrušit
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center gap-2">
-                                        {user.premium_until ? (
-                                          <>
-                                            <span className="text-sm">
-                                              {format(new Date(user.premium_until), 'dd.MM.yyyy')}
-                                            </span>
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              onClick={() => setEditingPremiumDate({
-                                                userId: user.id,
-                                                date: format(new Date(user.premium_until!), 'yyyy-MM-dd')
-                                              })}
-                                            >
-                                              <Calendar className="h-4 w-4" />
-                                            </Button>
-                                          </>
-                                        ) : (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setEditingPremiumDate({
-                                              userId: user.id,
-                                              date: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
-                                            })}
-                                          >
-                                            <Calendar className="h-4 w-4 mr-1" />
-                                            Nastavit datum
-                                          </Button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
+                                  <>
+                                    <Crown className="h-3 w-3 mr-1" />
+                                    Premium
+                                  </>
                                 ) : (
-                                  '-'
+                                  'Free'
                                 )}
-                              </TableCell>
-                              <TableCell>
-                                {user.subscription_type === 'free' ? user.tests_remaining : '∞'}
-                              </TableCell>
-                              <TableCell>
-                                {user.subscription_type === 'free' 
-                                  ? (daysUntilReset !== null ? `${daysUntilReset} dní` : '30 dní od 1. testu') 
-                                  : '-'}
-                              </TableCell>
-                              <TableCell>
-                                <Select
-                                  value={user.subscription_type}
-                                  onValueChange={(value: 'free' | 'premium') => 
-                                    updateSubscriptionMutation.mutate({ userId: user.id, subscriptionType: value })
-                                  }
-                                  disabled={updateSubscriptionMutation.isPending}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingUser(user);
+                                    setEditDialogOpen(true);
+                                  }}
                                 >
-                                  <SelectTrigger className="w-32">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="free">Free</SelectItem>
-                                    <SelectItem value="premium">Premium</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </TableCell>
-                              <TableCell>
-                                {user.subscription_type === 'free' && (
-                                  <Select
-                                    value={user.tests_remaining.toString()}
-                                    onValueChange={(value) => 
-                                      updateTestsMutation.mutate({ userId: user.id, testsRemaining: parseInt(value) })
-                                    }
-                                    disabled={updateTestsMutation.isPending}
-                                  >
-                                    <SelectTrigger className="w-20">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="0">0</SelectItem>
-                                      <SelectItem value="1">1</SelectItem>
-                                      <SelectItem value="2">2</SelectItem>
-                                      <SelectItem value="3">3</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              </TableCell>
-                              <TableCell>
+                                  Upravit
+                                </Button>
                                 <Button
                                   variant="destructive"
                                   size="sm"
@@ -494,16 +371,111 @@ export default function AdminUsers() {
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Edit User Dialog */}
+            <AlertDialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Upravit uživatele</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {editingUser?.email}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {editingUser && (
+                  <div className="space-y-4 py-4">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Typ členství</Label>
+                      <Select
+                        value={editingUser.subscription_type}
+                        onValueChange={(value: 'free' | 'premium') => {
+                          setEditingUser({
+                            ...editingUser,
+                            subscription_type: value,
+                            tests_remaining: value === 'premium' ? 999999 : editingUser.tests_remaining
+                          });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="free">Free</SelectItem>
+                          <SelectItem value="premium">Premium</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {editingUser.subscription_type === 'premium' && (
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Premium do</Label>
+                        <Input
+                          type="date"
+                          value={editingUser.premium_until ? format(new Date(editingUser.premium_until), 'yyyy-MM-dd') : ''}
+                          onChange={(e) => setEditingUser({
+                            ...editingUser,
+                            premium_until: e.target.value ? new Date(e.target.value).toISOString() : null
+                          })}
+                          min={format(new Date(), 'yyyy-MM-dd')}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Nechte prázdné pro neomezené premium
+                        </p>
+                      </div>
+                    )}
+
+                    {editingUser.subscription_type === 'free' && (
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Zbývající testy</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="999"
+                          value={editingUser.tests_remaining}
+                          onChange={(e) => setEditingUser({
+                            ...editingUser,
+                            tests_remaining: parseInt(e.target.value) || 0
+                          })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => {
+                    setEditDialogOpen(false);
+                    setEditingUser(null);
+                  }}>
+                    Zrušit
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (editingUser) {
+                        updateSubscriptionMutation.mutate({
+                          userId: editingUser.id,
+                          subscriptionType: editingUser.subscription_type,
+                          testsRemaining: editingUser.tests_remaining,
+                          premiumUntil: editingUser.premium_until
+                        });
+                        setEditDialogOpen(false);
+                        setEditingUser(null);
+                      }
+                    }}
+                  >
+                    Uložit změny
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
               <AlertDialogContent>

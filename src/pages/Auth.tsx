@@ -140,6 +140,12 @@ export default function Auth() {
             </TabsContent>
             
             <TabsContent value="signup">
+              <div className="mb-4 p-3 bg-primary/10 rounded-md border border-primary/20">
+                <p className="text-sm text-center">
+                  <strong>🎉 Speciální akce!</strong><br />
+                  Během testování platformy získáváte <strong>bezplatné Premium členství</strong> na dobu neurčitou.
+                </p>
+              </div>
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Jméno</Label>
