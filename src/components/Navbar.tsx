@@ -25,8 +25,8 @@ export function Navbar() {
           <Link to="/">
             <Button variant="ghost" className="rounded-full">Domů</Button>
           </Link>
-          <Link to="/contact">
-            <Button variant="ghost" className="rounded-full">Kontakt</Button>
+          <Link to="/about">
+            <Button variant="ghost" className="rounded-full">O Nás</Button>
           </Link>
         </div>
         
@@ -53,8 +53,8 @@ export function Navbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/contact" onClick={() => setOpen(false)} className="cursor-pointer">
-                  Kontakt
+                <Link to="/about" onClick={() => setOpen(false)} className="cursor-pointer">
+                  O Nás
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
