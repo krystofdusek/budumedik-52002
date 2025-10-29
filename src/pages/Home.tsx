@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Target, TrendingUp, Zap } from "lucide-react";
-import mockupImage from "@/assets/mockup-dark.png";
+import { useTheme } from "@/components/ThemeProvider";
+import mockupDark from "@/assets/mockup-dark.png";
+import mockupLight from "@/assets/mockup-light.png";
 const features = [{
   icon: Brain,
   title: "AI testy",
@@ -22,6 +24,9 @@ const features = [{
   description: "Otázky inspirované skutečnými přijímacími zkouškami z minulých let"
 }];
 export default function Home() {
+  const { theme } = useTheme();
+  const mockupImage = theme === "dark" ? mockupDark : mockupLight;
+  
   return <div className="min-h-screen bg-background">
       <Navbar />
       
@@ -54,13 +59,13 @@ export default function Home() {
               </div>
               
               {/* App Mockup with 3D effect */}
-              <div className="mt-20 mb-12 animate-fade-in px-4 md:px-8" style={{ animationDelay: "0.5s", perspective: "1500px" }}>
+              <div className="mt-32 mb-32 animate-fade-in px-4 md:px-8" style={{ animationDelay: "0.5s", perspective: "1500px" }}>
                 <img 
                   src={mockupImage} 
                   alt="BioMed platform mockup" 
-                  className="w-full h-auto rounded-3xl shadow-[0_20px_80px_-20px_rgba(0,0,0,0.4)] hover:shadow-[0_30px_100px_-20px_rgba(0,0,0,0.5)] transition-all duration-500"
+                  className="w-full h-auto rounded-3xl shadow-[0_20px_80px_-20px_rgba(0,0,0,0.4)] dark:shadow-[0_20px_80px_-20px_rgba(0,0,0,0.6)] hover:shadow-[0_30px_100px_-20px_rgba(0,0,0,0.5)] transition-all duration-500"
                   style={{ 
-                    transform: "rotateX(4deg)",
+                    transform: "rotateX(-8deg)",
                     transformStyle: "preserve-3d"
                   }}
                 />
