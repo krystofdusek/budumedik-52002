@@ -27,20 +27,20 @@ export default function Home() {
       
       <main className="pt-24">
         {/* Hero Section */}
-        <section className="relative py-12 overflow-hidden">
+        <section className="relative py-12 overflow-visible">
           <div className="container relative z-10">
-            <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="max-w-5xl mx-auto text-center space-y-8">
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight animate-fade-in">
                 Připravte se na medicínu{" "}
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
                   s pomocí AI
                 </span>
               </h1>
-              <p className="text-xl text-muted-foreground animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              <p className="text-xl text-muted-foreground animate-fade-in" style={{ animationDelay: "0.15s" }}>
                 Inteligentní platforma pro přípravu na přijímací zkoušky
                 s AI personalizací a skutečnými otázkami z minulých let
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
                 <Link to="/auth">
                   <Button size="lg" className="text-lg rounded-full px-8">
                     Začít se učit
@@ -53,16 +53,17 @@ export default function Home() {
                 </Link>
               </div>
               
-              {/* App Mockup */}
-              <div className="mt-16 animate-fade-in relative" style={{ animationDelay: "0.3s" }}>
-                <div className="relative max-w-6xl mx-auto">
-                  <img 
-                    src={mockupImage} 
-                    alt="BioMed platform mockup" 
-                    className="w-full h-auto rounded-3xl shadow-2xl"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent rounded-b-3xl" />
-                </div>
+              {/* App Mockup with 3D effect */}
+              <div className="mt-20 mb-12 animate-fade-in px-4 md:px-8" style={{ animationDelay: "0.5s", perspective: "1500px" }}>
+                <img 
+                  src={mockupImage} 
+                  alt="BioMed platform mockup" 
+                  className="w-full h-auto rounded-3xl shadow-[0_20px_80px_-20px_rgba(0,0,0,0.4)] hover:shadow-[0_30px_100px_-20px_rgba(0,0,0,0.5)] transition-all duration-500"
+                  style={{ 
+                    transform: "rotateX(4deg)",
+                    transformStyle: "preserve-3d"
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -71,7 +72,7 @@ export default function Home() {
         {/* Features Section */}
         <section className="py-20 bg-muted/50">
           <div className="container">
-            <div className="text-center mb-12">
+            <div className="text-center mb-12 animate-fade-in">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Proč si vybrat naši platformu?
               </h2>
@@ -81,9 +82,13 @@ export default function Home() {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {features.map(feature => <Card key={feature.title} className="border-border">
+              {features.map((feature, index) => <Card 
+                  key={feature.title} 
+                  className="border-border hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in"
+                  style={{ animationDelay: `${0.1 + index * 0.1}s` }}
+                >
                   <CardHeader>
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
                       <feature.icon className="h-6 w-6 text-primary" />
                     </div>
                     <CardTitle className="text-xl">{feature.title}</CardTitle>
@@ -101,17 +106,17 @@ export default function Home() {
         {/* CTA Section */}
         <section className="py-20">
           <div className="container">
-            <Card className="bg-gradient-hero border-0 text-primary-foreground">
+            <Card className="bg-gradient-hero border-0 text-primary-foreground animate-fade-in hover:shadow-2xl transition-all duration-500">
               <CardHeader className="text-center space-y-4 py-12">
-                <CardTitle className="text-3xl md:text-4xl">
+                <CardTitle className="text-3xl md:text-4xl animate-fade-in" style={{ animationDelay: "0.1s" }}>
                   Připraveni začít?
                 </CardTitle>
-                <CardDescription className="text-lg text-primary-foreground/90 max-w-2xl mx-auto">
+                <CardDescription className="text-lg text-primary-foreground/90 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: "0.2s" }}>
                   Připojte se k tisícům studentů, kteří už úspěšně používají naši platformu
                 </CardDescription>
-                <div className="pt-4">
+                <div className="pt-4 animate-fade-in" style={{ animationDelay: "0.3s" }}>
                   <Link to="/auth">
-                    <Button size="lg" variant="secondary" className="text-lg">
+                    <Button size="lg" variant="secondary" className="text-lg rounded-full hover:scale-105 transition-transform">
                       Vytvořit účet zdarma
                     </Button>
                   </Link>
