@@ -170,14 +170,23 @@ export default function TestGenerators() {
         return;
       }
 
-      // Decrement test count for free users
+      // Decrement test count for free users and set reset_date on first test
       if (subscription?.subscription_type === 'free') {
+        const updateData: any = { 
+          tests_remaining: subscription.tests_remaining - 1,
+          updated_at: new Date().toISOString()
+        };
+        
+        // If this is the first test (going from 3 to 2), set reset_date to 30 days from now
+        if (subscription.tests_remaining === 3 && !subscription.reset_date) {
+          const resetDate = new Date();
+          resetDate.setDate(resetDate.getDate() + 30);
+          updateData.reset_date = resetDate.toISOString();
+        }
+        
         await supabase
           .from("user_subscriptions")
-          .update({ 
-            tests_remaining: subscription.tests_remaining - 1,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq("user_id", subscription.user_id);
         await refetchSubscription();
       }
@@ -246,14 +255,23 @@ export default function TestGenerators() {
         return;
       }
 
-      // Decrement test count for free users
+      // Decrement test count for free users and set reset_date on first test
       if (subscription?.subscription_type === 'free') {
+        const updateData: any = { 
+          tests_remaining: subscription.tests_remaining - 1,
+          updated_at: new Date().toISOString()
+        };
+        
+        // If this is the first test (going from 3 to 2), set reset_date to 30 days from now
+        if (subscription.tests_remaining === 3 && !subscription.reset_date) {
+          const resetDate = new Date();
+          resetDate.setDate(resetDate.getDate() + 30);
+          updateData.reset_date = resetDate.toISOString();
+        }
+        
         await supabase
           .from("user_subscriptions")
-          .update({ 
-            tests_remaining: subscription.tests_remaining - 1,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq("user_id", subscription.user_id);
         await refetchSubscription();
       }

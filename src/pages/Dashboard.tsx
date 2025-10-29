@@ -70,12 +70,18 @@ export default function Dashboard() {
     : 0;
 
   const getDaysUntilReset = () => {
-    if (!subscription?.reset_date) return 0;
+    if (!subscription?.reset_date) return null;
     const resetDate = new Date(subscription.reset_date);
     const now = new Date();
     const diffTime = resetDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
+  };
+
+  const getResetText = () => {
+    const days = getDaysUntilReset();
+    if (days === null) return "30 dní od prvního testu";
+    return `${days} dní do resetu`;
   };
 
   return (
@@ -124,7 +130,7 @@ export default function Dashboard() {
                       <Calendar className="h-8 w-8 text-primary" />
                     </div>
                     <CardDescription>
-                      Zbývající testy ({getDaysUntilReset()} dní do resetu)
+                      Zbývající testy ({getResetText()})
                     </CardDescription>
                   </CardHeader>
                 </Card>

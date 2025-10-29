@@ -215,12 +215,18 @@ export default function Settings() {
   };
 
   const getDaysUntilReset = () => {
-    if (!subscription?.reset_date) return 0;
+    if (!subscription?.reset_date) return null;
     const resetDate = new Date(subscription.reset_date);
     const now = new Date();
     const diffTime = resetDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
+  };
+
+  const getResetText = () => {
+    const days = getDaysUntilReset();
+    if (days === null) return "30 dní od prvního testu";
+    return `Reset za ${days} dní`;
   };
 
   return (
@@ -280,7 +286,7 @@ export default function Settings() {
                         <div className="text-right">
                           <div className="text-2xl font-bold">{subscription.tests_remaining}</div>
                           <div className="text-xs text-muted-foreground">
-                            Reset za {getDaysUntilReset()} dní
+                            {getResetText()}
                           </div>
                         </div>
                       </div>

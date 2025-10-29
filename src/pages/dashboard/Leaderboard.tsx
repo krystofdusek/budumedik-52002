@@ -6,6 +6,8 @@ import { Trophy, Medal, Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import logo from "@/assets/logo.png";
+import { UpgradeDialog } from "@/components/UpgradeDialog";
+import { useQuery } from "@tanstack/react-query";
 
 type LeaderboardEntry = {
   rank: number;
@@ -20,10 +22,36 @@ export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+
+  const { data: subscription } = useQuery({
+    queryKey: ["user-subscription", userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from("user_subscriptions")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
 
   useEffect(() => {
     loadLeaderboard();
+    loadUserId();
   }, []);
+
+  const loadUserId = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUserId(user.id);
+    }
+  };
 
   const loadLeaderboard = async () => {
     try {
@@ -72,11 +100,15 @@ export default function Leaderboard() {
     return null;
   };
 
+  // Check if user is on free subscription
+  const isFreeUser = subscription?.subscription_type === 'free';
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <main className="flex-1 p-3 sm:p-4 md:p-8 bg-muted/50">
+          <UpgradeDialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen} />
           <div className="md:hidden mb-4 flex items-center justify-between">
             <MobileNav />
             <img 
@@ -89,9 +121,29 @@ export default function Leaderboard() {
             <div className="px-1">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Žebříček nejaktivnějších</h1>
               <p className="text-sm sm:text-base text-muted-foreground">
-                Soutěžte s ostatními studenty a sledujte svůj pokrok
+                {isFreeUser ? "Odemkněte žebříček s Premium členstvím" : "Soutěžte s ostatními studenty a sledujte svůj pokrok"}
               </p>
             </div>
+
+            {isFreeUser ? (
+              <Card className="border-primary">
+                <CardHeader>
+                  <CardTitle>Žebříček je dostupný pro Premium</CardTitle>
+                  <CardDescription>
+                    Porovnejte se s ostatními studenty a sledujte své pokroky v žebříčku
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <button
+                    onClick={() => setUpgradeDialogOpen(true)}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium py-3 px-4 rounded-lg transition-colors"
+                  >
+                    Upgrade na Premium
+                  </button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
 
             {currentUserRank && (
               <Card className="border-primary">
@@ -180,6 +232,8 @@ export default function Leaderboard() {
                 </p>
               </CardContent>
             </Card>
+            </>
+            )}
           </div>
         </main>
       </div>

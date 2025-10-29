@@ -488,7 +488,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          reset_date: string
+          reset_date: string | null
           subscription_type: Database["public"]["Enums"]["subscription_type"]
           tests_remaining: number
           updated_at: string
@@ -497,7 +497,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          reset_date?: string
+          reset_date?: string | null
           subscription_type?: Database["public"]["Enums"]["subscription_type"]
           tests_remaining?: number
           updated_at?: string
@@ -506,7 +506,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          reset_date?: string
+          reset_date?: string | null
           subscription_type?: Database["public"]["Enums"]["subscription_type"]
           tests_remaining?: number
           updated_at?: string
