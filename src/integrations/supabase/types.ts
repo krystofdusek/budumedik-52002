@@ -488,6 +488,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          premium_until: string | null
           reset_date: string | null
           subscription_type: Database["public"]["Enums"]["subscription_type"]
           tests_remaining: number
@@ -497,6 +498,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          premium_until?: string | null
           reset_date?: string | null
           subscription_type?: Database["public"]["Enums"]["subscription_type"]
           tests_remaining?: number
@@ -506,6 +508,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          premium_until?: string | null
           reset_date?: string | null
           subscription_type?: Database["public"]["Enums"]["subscription_type"]
           tests_remaining?: number
@@ -519,6 +522,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expire_premium_subscriptions: { Args: never; Returns: undefined }
       get_faculty_comparison: {
         Args: { p_faculty_id: string; p_user_id: string }
         Returns: {

@@ -5,12 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Loader2, Crown, Users } from "lucide-react";
+import { Loader2, Crown, Users, Calendar } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import {
   Table,
   TableBody,
@@ -26,12 +28,14 @@ interface UserWithSubscription {
   subscription_type: 'free' | 'premium';
   tests_remaining: number;
   reset_date: string;
+  premium_until: string | null;
 }
 
 export default function AdminUsers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [editingPremiumDate, setEditingPremiumDate] = useState<{userId: string, date: string} | null>(null);
 
   useEffect(() => {
     checkAdminStatus();
@@ -84,6 +88,7 @@ export default function AdminUsers() {
           subscription_type: subscription?.subscription_type || 'free',
           tests_remaining: subscription?.tests_remaining ?? 0,
           reset_date: subscription?.reset_date || '',
+          premium_until: subscription?.premium_until || null,
         };
       });
 
@@ -93,10 +98,11 @@ export default function AdminUsers() {
   });
 
   const updateSubscriptionMutation = useMutation({
-    mutationFn: async ({ userId, subscriptionType, testsRemaining }: { 
+    mutationFn: async ({ userId, subscriptionType, testsRemaining, premiumUntil }: { 
       userId: string; 
       subscriptionType: 'free' | 'premium';
       testsRemaining?: number;
+      premiumUntil?: string | null;
     }) => {
       const updateData: any = { 
         subscription_type: subscriptionType,
@@ -106,10 +112,18 @@ export default function AdminUsers() {
       if (subscriptionType === 'premium') {
         updateData.tests_remaining = 999999;
         updateData.reset_date = null;
-      } else if (testsRemaining !== undefined) {
-        updateData.tests_remaining = testsRemaining;
+        // If premiumUntil is provided, use it; otherwise keep existing or set to null
+        if (premiumUntil !== undefined) {
+          updateData.premium_until = premiumUntil;
+        }
       } else {
-        updateData.tests_remaining = 3;
+        // When switching to free, clear premium_until
+        updateData.premium_until = null;
+        if (testsRemaining !== undefined) {
+          updateData.tests_remaining = testsRemaining;
+        } else {
+          updateData.tests_remaining = 3;
+        }
       }
 
       const { error } = await supabase
@@ -180,6 +194,33 @@ export default function AdminUsers() {
     },
   });
 
+  const updatePremiumDateMutation = useMutation({
+    mutationFn: async ({ userId, premiumUntil }: { userId: string; premiumUntil: string }) => {
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({ premium_until: premiumUntil })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setEditingPremiumDate(null);
+      toast({
+        title: "Úspěch",
+        description: "Datum premium členství bylo nastaveno",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating premium date:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se nastavit datum",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -223,6 +264,7 @@ export default function AdminUsers() {
                         <TableRow>
                           <TableHead>Email</TableHead>
                           <TableHead>Členství</TableHead>
+                          <TableHead>Premium do</TableHead>
                           <TableHead>Zbývající testy</TableHead>
                           <TableHead>Reset za</TableHead>
                           <TableHead>Změnit členství</TableHead>
@@ -232,6 +274,8 @@ export default function AdminUsers() {
                       <TableBody>
                         {users?.map((user) => {
                           const daysUntilReset = getDaysUntilReset(user.reset_date);
+                          const isEditingDate = editingPremiumDate?.userId === user.id;
+                          
                           return (
                             <TableRow key={user.id}>
                               <TableCell className="font-medium">{user.email}</TableCell>
@@ -246,6 +290,82 @@ export default function AdminUsers() {
                                     'Free'
                                   )}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {user.subscription_type === 'premium' ? (
+                                  <div className="space-y-2">
+                                    {isEditingDate ? (
+                                      <div className="flex gap-2 items-center">
+                                        <Input
+                                          type="date"
+                                          value={editingPremiumDate.date}
+                                          onChange={(e) => setEditingPremiumDate({ userId: user.id, date: e.target.value })}
+                                          className="w-40"
+                                          min={format(new Date(), 'yyyy-MM-dd')}
+                                        />
+                                        <Button
+                                          size="sm"
+                                          onClick={() => {
+                                            if (editingPremiumDate.date) {
+                                              updatePremiumDateMutation.mutate({
+                                                userId: user.id,
+                                                premiumUntil: new Date(editingPremiumDate.date).toISOString()
+                                              });
+                                            }
+                                          }}
+                                          disabled={updatePremiumDateMutation.isPending}
+                                        >
+                                          {updatePremiumDateMutation.isPending ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                          ) : (
+                                            'Uložit'
+                                          )}
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => setEditingPremiumDate(null)}
+                                        >
+                                          Zrušit
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        {user.premium_until ? (
+                                          <>
+                                            <span className="text-sm">
+                                              {format(new Date(user.premium_until), 'dd.MM.yyyy')}
+                                            </span>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => setEditingPremiumDate({
+                                                userId: user.id,
+                                                date: format(new Date(user.premium_until!), 'yyyy-MM-dd')
+                                              })}
+                                            >
+                                              <Calendar className="h-4 w-4" />
+                                            </Button>
+                                          </>
+                                        ) : (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setEditingPremiumDate({
+                                              userId: user.id,
+                                              date: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+                                            })}
+                                          >
+                                            <Calendar className="h-4 w-4 mr-1" />
+                                            Nastavit datum
+                                          </Button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  '-'
+                                )}
                               </TableCell>
                               <TableCell>
                                 {user.subscription_type === 'free' ? user.tests_remaining : '∞'}
