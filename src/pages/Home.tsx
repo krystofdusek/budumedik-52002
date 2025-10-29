@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Target, TrendingUp, Zap } from "lucide-react";
-import doctorImage from "@/assets/doctor.png";
+import mockupImage from "@/assets/mockup-dark.png";
 const features = [{
   icon: Brain,
   title: "AI testy",
@@ -53,13 +53,16 @@ export default function Home() {
                 </Link>
               </div>
               
-              {/* Doctor Image */}
-              <div className="mt-12 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                <img 
-                  src={doctorImage} 
-                  alt="Medical student" 
-                  className="mx-auto max-w-md w-full h-auto rounded-2xl shadow-2xl"
-                />
+              {/* App Mockup */}
+              <div className="mt-16 animate-fade-in relative" style={{ animationDelay: "0.3s" }}>
+                <div className="relative max-w-6xl mx-auto">
+                  <img 
+                    src={mockupImage} 
+                    alt="BioMed platform mockup" 
+                    className="w-full h-auto rounded-3xl shadow-2xl"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent rounded-b-3xl" />
+                </div>
               </div>
             </div>
           </div>
