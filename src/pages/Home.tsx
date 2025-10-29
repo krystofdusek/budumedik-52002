@@ -135,6 +135,9 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p>© 2025. Všechna práva vyhrazena.</p>
             <div className="flex gap-4">
+              <Link to="/blog" className="hover:text-primary transition-colors">
+                Články
+              </Link>
               <Link to="/privacy-policy" className="hover:text-primary transition-colors">
                 Ochrana osobních údajů
               </Link>

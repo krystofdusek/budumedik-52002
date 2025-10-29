@@ -21,6 +21,9 @@ import Test from "./pages/Test";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminReported from "./pages/admin/AdminReported";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminBlog from "./pages/admin/AdminBlog";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
@@ -56,6 +59,9 @@ function AppRoutes() {
         <Route path="/admin/questions" element={<AdminQuestions />} />
         <Route path="/admin/reported" element={<AdminReported />} />
         <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/blog" element={<AdminBlog />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <CookieConsent />
