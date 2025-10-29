@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Crown, Calendar } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { sortFacultiesByCity } from "@/lib/facultySort";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +40,22 @@ export default function Settings() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+
+  const { data: subscription } = useQuery({
+    queryKey: ["user-subscription", userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from("user_subscriptions")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
 
   useEffect(() => {
     loadData();
@@ -196,6 +214,15 @@ export default function Settings() {
     }
   };
 
+  const getDaysUntilReset = () => {
+    if (!subscription?.reset_date) return 0;
+    const resetDate = new Date(subscription.reset_date);
+    const now = new Date();
+    const diffTime = resetDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -216,6 +243,67 @@ export default function Settings() {
                 Upravte si aplikaci podle svých preferencí
               </p>
             </div>
+
+            {subscription && (
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    Členství
+                    <Badge variant={subscription.subscription_type === 'premium' ? 'default' : 'secondary'}>
+                      {subscription.subscription_type === 'premium' ? (
+                        <>
+                          <Crown className="h-3 w-3 mr-1" />
+                          Premium
+                        </>
+                      ) : (
+                        'Free'
+                      )}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Informace o vašem členství
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {subscription.subscription_type === 'free' && (
+                    <>
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
+                        <div className="flex items-center gap-3">
+                          <Calendar className="h-5 w-5 text-primary" />
+                          <div>
+                            <div className="font-medium">Zbývající testy</div>
+                            <div className="text-sm text-muted-foreground">
+                              {subscription.tests_remaining} z 3 testů zdarma
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">{subscription.tests_remaining}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Reset za {getDaysUntilReset()} dní
+                          </div>
+                        </div>
+                      </div>
+                      <Button className="w-full" size="lg">
+                        <Crown className="mr-2 h-4 w-4" />
+                        Upgrade na Premium
+                      </Button>
+                    </>
+                  )}
+                  {subscription.subscription_type === 'premium' && (
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10">
+                      <Crown className="h-5 w-5 text-primary" />
+                      <div>
+                        <div className="font-medium">Premium aktivní</div>
+                        <div className="text-sm text-muted-foreground">
+                          Máte přístup ke všem funkcím
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>

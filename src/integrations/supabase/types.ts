@@ -484,6 +484,36 @@ export type Database = {
           },
         ]
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          reset_date: string
+          subscription_type: Database["public"]["Enums"]["subscription_type"]
+          tests_remaining: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reset_date?: string
+          subscription_type?: Database["public"]["Enums"]["subscription_type"]
+          tests_remaining?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reset_date?: string
+          subscription_type?: Database["public"]["Enums"]["subscription_type"]
+          tests_remaining?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -511,6 +541,7 @@ export type Database = {
       }
       is_admin: { Args: { user_id: string }; Returns: boolean }
       recalculate_user_statistics: { Args: never; Returns: undefined }
+      reset_monthly_test_limit: { Args: never; Returns: undefined }
       resolve_question_report: {
         Args: { notes?: string; report_id: string; resolution_status: string }
         Returns: undefined
@@ -528,6 +559,7 @@ export type Database = {
         | "LFOL"
         | "LFOSTRAVA"
       subject_type: "PHYSICS" | "CHEMISTRY" | "BIOLOGY"
+      subscription_type: "free" | "premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -667,6 +699,7 @@ export const Constants = {
         "LFOSTRAVA",
       ],
       subject_type: ["PHYSICS", "CHEMISTRY", "BIOLOGY"],
+      subscription_type: ["free", "premium"],
     },
   },
 } as const
