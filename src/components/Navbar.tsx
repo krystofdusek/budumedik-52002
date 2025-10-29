@@ -10,8 +10,8 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-      <div className="container flex h-16 items-center justify-between">
+    <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-6xl">
+      <div className="flex h-16 items-center justify-between px-6 rounded-full border border-border/50 bg-background/80 backdrop-blur-xl shadow-lg">
         <Link to="/" className="flex items-center">
           <img 
             src={logo} 
@@ -21,17 +21,20 @@ export function Navbar() {
         </Link>
         
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2 flex-1 justify-center">
           <Link to="/">
-            <Button variant="ghost">Domů</Button>
+            <Button variant="ghost" className="rounded-full">Domů</Button>
           </Link>
           <Link to="/contact">
-            <Button variant="ghost">Kontakt</Button>
+            <Button variant="ghost" className="rounded-full">Kontakt</Button>
           </Link>
-          <Link to="/auth">
-            <Button variant="default">Přihlásit se</Button>
-          </Link>
+        </div>
+        
+        <div className="hidden md:flex items-center gap-2">
           <ThemeToggle />
+          <Link to="/auth">
+            <Button className="rounded-full">Přihlásit se</Button>
+          </Link>
         </div>
 
         {/* Mobile Menu */}

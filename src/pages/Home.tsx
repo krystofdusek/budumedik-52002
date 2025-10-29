@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Target, TrendingUp, Zap } from "lucide-react";
-import logo from "@/assets/logo.png";
+import doctorImage from "@/assets/doctor.png";
 const features = [{
   icon: Brain,
   title: "AI testy",
@@ -25,36 +25,41 @@ export default function Home() {
   return <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="pt-16">
+      <main className="pt-24">
         {/* Hero Section */}
-        <section className="relative py-20 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-hero opacity-10" />
+        <section className="relative py-12 overflow-hidden">
           <div className="container relative z-10">
-            <div className="max-w-3xl mx-auto text-center space-y-8">
-              <div className="flex justify-center mb-8">
-                
-              </div>
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
+            <div className="max-w-4xl mx-auto text-center space-y-8">
+              <h1 className="text-5xl md:text-6xl font-bold tracking-tight animate-fade-in">
                 Připravte se na medicínu{" "}
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
                   s pomocí AI
                 </span>
               </h1>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-xl text-muted-foreground animate-fade-in" style={{ animationDelay: "0.1s" }}>
                 Inteligentní platforma pro přípravu na přijímací zkoušky
                 s AI personalizací a skutečnými otázkami z minulých let
               </p>
-              <div className="flex flex-col gap-4 items-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: "0.2s" }}>
                 <Link to="/auth">
-                  <Button size="lg" className="text-lg">
+                  <Button size="lg" className="text-lg rounded-full px-8">
                     Začít se učit
                   </Button>
                 </Link>
                 <Link to="/contact">
-                  <Button size="lg" variant="outline" className="text-lg">
+                  <Button size="lg" variant="outline" className="text-lg rounded-full px-8">
                     Kontaktovat nás
                   </Button>
                 </Link>
+              </div>
+              
+              {/* Doctor Image */}
+              <div className="mt-12 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+                <img 
+                  src={doctorImage} 
+                  alt="Medical student" 
+                  className="mx-auto max-w-md w-full h-auto rounded-2xl shadow-2xl"
+                />
               </div>
             </div>
           </div>
