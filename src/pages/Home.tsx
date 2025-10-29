@@ -36,7 +36,7 @@ export default function Home() {
           <div className="w-full max-w-6xl mx-auto px-4 relative z-10">
             <div className="max-w-5xl mx-auto text-center space-y-8">
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight animate-fade-in">
-                Připravte se na medicínu{" "}
+                Připravte se na medicínu<br />
                 <span className="bg-gradient-primary bg-clip-text text-transparent">
                   s pomocí AI
                 </span>
