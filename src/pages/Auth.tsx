@@ -42,7 +42,7 @@ export default function Auth() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/email-verified`,
         data: {
           name: name,
         },
