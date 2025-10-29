@@ -28,9 +28,14 @@ export function ThemeProvider({
   storageKey = "medical-prep-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  );
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return (stored as Theme) || defaultTheme;
+    } catch {
+      return defaultTheme;
+    }
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -41,12 +46,20 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
+      try {
+        localStorage.setItem(storageKey, theme);
+      } catch (error) {
+        console.error('Failed to save theme:', error);
+      }
       setTheme(theme);
     },
     toggleTheme: () => {
       const newTheme = theme === "light" ? "dark" : "light";
-      localStorage.setItem(storageKey, newTheme);
+      try {
+        localStorage.setItem(storageKey, newTheme);
+      } catch (error) {
+        console.error('Failed to save theme:', error);
+      }
       setTheme(newTheme);
     },
   };
