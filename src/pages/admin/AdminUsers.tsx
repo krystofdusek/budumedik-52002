@@ -54,29 +54,34 @@ export default function AdminUsers() {
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
+      // Join profiles with subscriptions in a single query
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email');
+        .select(`
+          id, 
+          email,
+          user_subscriptions (
+            subscription_type,
+            tests_remaining,
+            reset_date
+          )
+        `);
       
       if (profilesError) throw profilesError;
 
-      const usersWithSubscriptions: UserWithSubscription[] = [];
-      
-      for (const profile of profiles || []) {
-        const { data: subscription } = await supabase
-          .from('user_subscriptions')
-          .select('*')
-          .eq('user_id', profile.id)
-          .single();
+      const usersWithSubscriptions: UserWithSubscription[] = (profiles || []).map(profile => {
+        const subscription = Array.isArray(profile.user_subscriptions) 
+          ? profile.user_subscriptions[0] 
+          : profile.user_subscriptions;
 
-        usersWithSubscriptions.push({
+        return {
           id: profile.id,
           email: profile.email,
           subscription_type: subscription?.subscription_type || 'free',
           tests_remaining: subscription?.tests_remaining || 0,
           reset_date: subscription?.reset_date || '',
-        });
-      }
+        };
+      });
 
       return usersWithSubscriptions;
     },
@@ -84,13 +89,28 @@ export default function AdminUsers() {
   });
 
   const updateSubscriptionMutation = useMutation({
-    mutationFn: async ({ userId, subscriptionType }: { userId: string; subscriptionType: 'free' | 'premium' }) => {
+    mutationFn: async ({ userId, subscriptionType, testsRemaining }: { 
+      userId: string; 
+      subscriptionType: 'free' | 'premium';
+      testsRemaining?: number;
+    }) => {
+      const updateData: any = { 
+        subscription_type: subscriptionType,
+      };
+
+      // For premium users, set unlimited tests; for free users, reset to 3 or use provided value
+      if (subscriptionType === 'premium') {
+        updateData.tests_remaining = 999999;
+        updateData.reset_date = null;
+      } else if (testsRemaining !== undefined) {
+        updateData.tests_remaining = testsRemaining;
+      } else {
+        updateData.tests_remaining = 3;
+      }
+
       const { error } = await supabase
         .from('user_subscriptions')
-        .update({ 
-          subscription_type: subscriptionType,
-          tests_remaining: subscriptionType === 'premium' ? 999999 : 3
-        })
+        .update(updateData)
         .eq('user_id', userId);
 
       if (error) throw error;
@@ -113,13 +133,48 @@ export default function AdminUsers() {
   });
 
   const getDaysUntilReset = (resetDate: string) => {
-    if (!resetDate) return 0;
+    if (!resetDate) return null;
     const reset = new Date(resetDate);
     const now = new Date();
     const diffTime = reset.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   };
+
+  const updateTestsMutation = useMutation({
+    mutationFn: async ({ userId, testsRemaining }: { userId: string; testsRemaining: number }) => {
+      const updateData: any = { 
+        tests_remaining: testsRemaining,
+      };
+
+      // If setting from 3, clear reset_date (will be set on first test)
+      if (testsRemaining === 3) {
+        updateData.reset_date = null;
+      }
+
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update(updateData)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast({
+        title: "Úspěch",
+        description: "Počet testů byl změněn",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating tests:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se změnit počet testů",
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <SidebarProvider>
@@ -158,58 +213,88 @@ export default function AdminUsers() {
                     <Loader2 className="h-8 w-8 animate-spin" />
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Členství</TableHead>
-                        <TableHead>Zbývající testy</TableHead>
-                        <TableHead>Reset za</TableHead>
-                        <TableHead>Akce</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users?.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={user.subscription_type === 'premium' ? 'default' : 'secondary'}>
-                              {user.subscription_type === 'premium' ? (
-                                <>
-                                  <Crown className="h-3 w-3 mr-1" />
-                                  Premium
-                                </>
-                              ) : (
-                                'Free'
-                              )}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {user.subscription_type === 'free' ? user.tests_remaining : '∞'}
-                          </TableCell>
-                          <TableCell>
-                            {user.subscription_type === 'free' ? `${getDaysUntilReset(user.reset_date)} dní` : '-'}
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={user.subscription_type}
-                              onValueChange={(value: 'free' | 'premium') => 
-                                updateSubscriptionMutation.mutate({ userId: user.id, subscriptionType: value })
-                              }
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="free">Free</SelectItem>
-                                <SelectItem value="premium">Premium</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Členství</TableHead>
+                          <TableHead>Zbývající testy</TableHead>
+                          <TableHead>Reset za</TableHead>
+                          <TableHead>Změnit členství</TableHead>
+                          <TableHead>Upravit testy</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {users?.map((user) => {
+                          const daysUntilReset = getDaysUntilReset(user.reset_date);
+                          return (
+                            <TableRow key={user.id}>
+                              <TableCell className="font-medium">{user.email}</TableCell>
+                              <TableCell>
+                                <Badge variant={user.subscription_type === 'premium' ? 'default' : 'secondary'}>
+                                  {user.subscription_type === 'premium' ? (
+                                    <>
+                                      <Crown className="h-3 w-3 mr-1" />
+                                      Premium
+                                    </>
+                                  ) : (
+                                    'Free'
+                                  )}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {user.subscription_type === 'free' ? user.tests_remaining : '∞'}
+                              </TableCell>
+                              <TableCell>
+                                {user.subscription_type === 'free' 
+                                  ? (daysUntilReset !== null ? `${daysUntilReset} dní` : '30 dní od 1. testu') 
+                                  : '-'}
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={user.subscription_type}
+                                  onValueChange={(value: 'free' | 'premium') => 
+                                    updateSubscriptionMutation.mutate({ userId: user.id, subscriptionType: value })
+                                  }
+                                  disabled={updateSubscriptionMutation.isPending}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="free">Free</SelectItem>
+                                    <SelectItem value="premium">Premium</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                {user.subscription_type === 'free' && (
+                                  <Select
+                                    value={user.tests_remaining.toString()}
+                                    onValueChange={(value) => 
+                                      updateTestsMutation.mutate({ userId: user.id, testsRemaining: parseInt(value) })
+                                    }
+                                    disabled={updateTestsMutation.isPending}
+                                  >
+                                    <SelectTrigger className="w-20">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="0">0</SelectItem>
+                                      <SelectItem value="1">1</SelectItem>
+                                      <SelectItem value="2">2</SelectItem>
+                                      <SelectItem value="3">3</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>

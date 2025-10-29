@@ -119,23 +119,33 @@ export default function Dashboard() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              {subscription?.subscription_type === 'free' && (
-                <Card className="hover-scale transition-all border-primary/50">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-2xl">
-                        {subscription.tests_remaining}
-                      </CardTitle>
+            {subscription?.subscription_type === 'free' && (
+              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-lg p-6 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Měsíční limit testů</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-bold text-primary">{subscription.tests_remaining}</span>
+                      <span className="text-lg text-muted-foreground">/ 3</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {getResetText()}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
                       <Calendar className="h-8 w-8 text-primary" />
                     </div>
-                    <CardDescription>
-                      Zbývající testy ({getResetText()})
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              )}
+                    {subscription.tests_remaining === 0 && (
+                      <Badge variant="destructive" className="text-xs">Vyčerpáno</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
+            <div className="grid md:grid-cols-3 gap-6">
               <Card className="hover-scale transition-all">
                 <CardHeader>
                   <div className="flex items-center justify-between">
