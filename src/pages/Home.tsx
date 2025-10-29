@@ -58,17 +58,14 @@ export default function Home() {
                 </Link>
               </div>
               
-              {/* App Mockup with 3D effect */}
-              <div className="mt-32 mb-32 animate-fade-in px-4 md:px-8" style={{ animationDelay: "0.5s", perspective: "1500px" }}>
+              {/* App Mockup with fade effect */}
+              <div className="mt-32 mb-32 animate-fade-in px-4 md:px-8 relative" style={{ animationDelay: "0.5s" }}>
                 <img 
                   src={mockupImage} 
                   alt="BioMed platform mockup" 
-                  className="w-full h-auto rounded-3xl shadow-[0_20px_80px_-20px_rgba(0,0,0,0.4)] dark:shadow-[0_20px_80px_-20px_rgba(0,0,0,0.6)] hover:shadow-[0_30px_100px_-20px_rgba(0,0,0,0.5)] transition-all duration-500"
-                  style={{ 
-                    transform: "rotateX(-8deg)",
-                    transformStyle: "preserve-3d"
-                  }}
+                  className="w-full h-auto rounded-3xl transition-all duration-500"
                 />
+                <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
               </div>
             </div>
           </div>
