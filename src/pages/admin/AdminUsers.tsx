@@ -54,31 +54,35 @@ export default function AdminUsers() {
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
-      // Join profiles with subscriptions in a single query
+      // First get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id, 
-          email,
-          user_subscriptions (
-            subscription_type,
-            tests_remaining,
-            reset_date
-          )
-        `);
+        .select('id, email');
       
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
 
+      // Then fetch all subscriptions
+      const { data: subscriptions, error: subsError } = await supabase
+        .from('user_subscriptions')
+        .select('*');
+
+      if (subsError) {
+        console.error('Error fetching subscriptions:', subsError);
+        throw subsError;
+      }
+
+      // Map them together
       const usersWithSubscriptions: UserWithSubscription[] = (profiles || []).map(profile => {
-        const subscription = Array.isArray(profile.user_subscriptions) 
-          ? profile.user_subscriptions[0] 
-          : profile.user_subscriptions;
+        const subscription = subscriptions?.find(s => s.user_id === profile.id);
 
         return {
           id: profile.id,
           email: profile.email,
           subscription_type: subscription?.subscription_type || 'free',
-          tests_remaining: subscription?.tests_remaining || 0,
+          tests_remaining: subscription?.tests_remaining ?? 0,
           reset_date: subscription?.reset_date || '',
         };
       });
