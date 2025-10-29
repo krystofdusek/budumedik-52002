@@ -48,6 +48,7 @@ export default function AdminUsers() {
   const [editingPremiumDate, setEditingPremiumDate] = useState<{userId: string, date: string} | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     checkAdminStatus();
@@ -170,6 +171,11 @@ export default function AdminUsers() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   };
+
+  // Filter users based on search query
+  const filteredUsers = users?.filter(user => 
+    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const updateTestsMutation = useMutation({
     mutationFn: async ({ userId, testsRemaining }: { userId: string; testsRemaining: number }) => {
@@ -304,9 +310,21 @@ export default function AdminUsers() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mb-4">
+                  <Input
+                    placeholder="Hledat podle emailu..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="max-w-sm"
+                  />
+                </div>
                 {isLoading ? (
                   <div className="flex justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : !filteredUsers || filteredUsers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {searchQuery ? 'Žádní uživatelé nenalezeni' : 'Zatím žádní uživatelé'}
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -324,7 +342,7 @@ export default function AdminUsers() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {users?.map((user) => {
+                        {filteredUsers?.map((user) => {
                           const daysUntilReset = getDaysUntilReset(user.reset_date);
                           const isEditingDate = editingPremiumDate?.userId === user.id;
                           

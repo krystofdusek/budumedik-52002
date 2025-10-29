@@ -16,6 +16,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -36,19 +37,28 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     checkAdminStatus();
-  }, []);
+  }, [isAdminProp]);
 
   const checkAdminStatus = async () => {
+    setIsLoading(true);
+    
+    // If prop is provided, use it
     if (isAdminProp !== undefined) {
       setIsAdmin(isAdminProp);
+      setIsLoading(false);
       return;
     }
 
+    // Otherwise check from database
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     const { data } = await supabase
       .from('user_roles')
@@ -58,6 +68,7 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
       .single();
 
     setIsAdmin(!!data);
+    setIsLoading(false);
   };
 
   const handleLogout = async () => {
@@ -108,7 +119,20 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isAdmin && (
+        {isLoading ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>
+              <Skeleton className="h-4 w-16" />
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="space-y-2 px-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ) : isAdmin ? (
           <SidebarGroup>
             <SidebarGroupLabel>Admin</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -133,7 +157,7 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ) : null}
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
