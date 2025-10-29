@@ -251,16 +251,29 @@ export default function Dashboard() {
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <Card 
-                    className="hover:shadow-lg transition-shadow cursor-pointer"
-                    onClick={() => navigate('/dashboard/test-generators')}
+                    className={`hover:shadow-lg transition-shadow cursor-pointer ${
+                      subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0 
+                        ? 'opacity-50' 
+                        : ''
+                    }`}
+                    onClick={() => {
+                      if (subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0) {
+                        setUpgradeDialogOpen(true);
+                      } else {
+                        navigate('/dashboard/tests');
+                      }
+                    }}
                   >
                     <CardHeader>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                           <FileText className="h-5 w-5 text-primary" />
                         </div>
-                        <CardTitle className="text-lg">Klasický test</CardTitle>
+                        {subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0 && (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                        )}
                       </div>
+                      <CardTitle className="text-lg">Klasický test</CardTitle>
                       <CardDescription>
                         Test z databáze manuálně nahraných otázek
                       </CardDescription>
@@ -268,16 +281,29 @@ export default function Dashboard() {
                   </Card>
 
                   <Card 
-                    className="hover:shadow-lg transition-shadow border-primary cursor-pointer"
-                    onClick={() => navigate('/dashboard/test-generators')}
+                    className={`hover:shadow-lg transition-shadow border-primary cursor-pointer ${
+                      subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0 
+                        ? 'opacity-50' 
+                        : ''
+                    }`}
+                    onClick={() => {
+                      if (subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0) {
+                        setUpgradeDialogOpen(true);
+                      } else {
+                        navigate('/dashboard/tests');
+                      }
+                    }}
                   >
                     <CardHeader>
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Sparkles className="h-5 w-5 text-primary" />
                         </div>
-                        <CardTitle className="text-lg">AI Personalizovaný test</CardTitle>
+                        {subscription?.subscription_type === 'free' && subscription?.tests_remaining <= 0 && (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                        )}
                       </div>
+                      <CardTitle className="text-lg">AI Personalizovaný test</CardTitle>
                       <CardDescription>
                         Inteligentně generované otázky přizpůsobené vám
                       </CardDescription>
