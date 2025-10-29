@@ -183,7 +183,7 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <a 
-                      href="https://discord.gg/ZnvARNdzM6" 
+                      href="https://discord.com/invite/ZnvARNdzM6" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="flex items-center"
