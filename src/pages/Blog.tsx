@@ -46,14 +46,11 @@ export default function Blog() {
     return matchesSearch && matchesCategory;
   });
 
-  const featuredPost = filteredPosts?.[0];
-  const latestPosts = filteredPosts?.slice(1);
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8 mt-20">
+        <div className="w-full max-w-6xl mx-auto px-4 py-8 mt-24">
           <p>Načítání...</p>
         </div>
       </div>
@@ -61,10 +58,17 @@ export default function Blog() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <Navbar />
-      <div className="container mx-auto px-4 py-8 mt-20">
-        <h1 className="text-4xl font-bold mb-8">Náš Blog</h1>
+      <div className="w-full max-w-6xl mx-auto px-4 py-8 mt-24">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent">
+            Blog & Resources
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Užitečné články a tipy pro úspěšnou přípravu
+          </p>
+        </div>
 
         {/* Search and Filter */}
         <div className="flex flex-col md:flex-row gap-4 mb-12">
@@ -74,11 +78,11 @@ export default function Blog() {
               placeholder="Hledat články..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 rounded-full"
             />
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full md:w-[200px]">
+            <SelectTrigger className="w-full md:w-[200px] rounded-full">
               <SelectValue placeholder="Všechny kategorie" />
             </SelectTrigger>
             <SelectContent>
@@ -92,68 +96,26 @@ export default function Blog() {
           </Select>
         </div>
 
-        {/* Featured Post */}
-        {featuredPost && (
-          <div className="mb-16 bg-card rounded-lg overflow-hidden border shadow-sm">
-            <div className="grid md:grid-cols-2 gap-6 p-8">
-              <div className="flex flex-col justify-center">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <Clock size={16} />
-                  <span>{new Date(featuredPost.created_at).toLocaleDateString("cs-CZ", { 
-                    day: 'numeric', 
-                    month: 'short', 
-                    year: 'numeric' 
-                  })}</span>
-                </div>
-                <h2 className="text-3xl font-bold mb-4">{featuredPost.title}</h2>
-                <p className="text-muted-foreground mb-6 line-clamp-4">
-                  {featuredPost.excerpt || featuredPost.content.substring(0, 250) + "..."}
-                </p>
-                <Button 
-                  onClick={() => navigate(`/blog/${featuredPost.slug}`)}
-                  variant="outline"
-                  className="w-fit"
-                >
-                  Přečíst více
-                </Button>
-              </div>
-              {featuredPost.featured_image && (
-                <div className="order-first md:order-last">
-                  <img
-                    src={featuredPost.featured_image}
-                    alt={featuredPost.title}
-                    className="w-full h-[300px] md:h-full object-cover rounded-lg"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Latest Posts */}
-        {latestPosts && latestPosts.length > 0 && (
-          <>
-            <h2 className="text-2xl font-bold mb-6">Nejnovější příspěvky</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {latestPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="cursor-pointer group"
-                  onClick={() => navigate(`/blog/${post.slug}`)}
-                >
-                  {post.featured_image && (
-                    <div className="relative overflow-hidden rounded-lg mb-4">
-                      <img
-                        src={post.featured_image}
-                        alt={post.title}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                    {post.title}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        {/* Blog Posts Grid */}
+        {filteredPosts && filteredPosts.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPosts.map((post) => (
+              <div
+                key={post.id}
+                className="cursor-pointer group bg-card rounded-xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                onClick={() => navigate(`/blog/${post.slug}`)}
+              >
+                {post.featured_image && (
+                  <div className="relative overflow-hidden aspect-video bg-muted">
+                    <img
+                      src={post.featured_image}
+                      alt={post.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                )}
+                <div className="p-6">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                     <Clock size={14} />
                     <span>{new Date(post.created_at).toLocaleDateString("cs-CZ", { 
                       day: 'numeric', 
@@ -161,13 +123,23 @@ export default function Blog() {
                       year: 'numeric' 
                     })}</span>
                   </div>
+                  <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                    {post.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {post.excerpt || post.content.substring(0, 100) + "..."}
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    className="mt-4 p-0 h-auto font-semibold text-primary group-hover:gap-2 transition-all"
+                  >
+                    Get More Info →
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {filteredPosts?.length === 0 && (
+              </div>
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenalezeny žádné články</p>
           </div>

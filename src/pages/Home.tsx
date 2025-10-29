@@ -33,7 +33,7 @@ export default function Home() {
       <main className="pt-24">
         {/* Hero Section */}
         <section className="relative py-12 overflow-visible">
-          <div className="container relative z-10">
+          <div className="w-full max-w-6xl mx-auto px-4 relative z-10">
             <div className="max-w-5xl mx-auto text-center space-y-8">
               <h1 className="text-5xl md:text-6xl font-bold tracking-tight animate-fade-in">
                 Připravte se na medicínu{" "}
@@ -73,7 +73,7 @@ export default function Home() {
 
         {/* Features Section */}
         <section className="py-20 bg-muted/50">
-          <div className="container">
+          <div className="w-full max-w-6xl mx-auto px-4">
             <div className="text-center mb-12 animate-fade-in">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Proč si vybrat naši platformu?
@@ -107,7 +107,7 @@ export default function Home() {
 
         {/* CTA Section */}
         <section className="py-20">
-          <div className="container">
+          <div className="w-full max-w-6xl mx-auto px-4">
             <Card className="bg-gradient-hero border-0 text-primary-foreground animate-fade-in hover:shadow-2xl transition-all duration-500">
               <CardHeader className="text-center space-y-4 py-12">
                 <CardTitle className="text-3xl md:text-4xl animate-fade-in" style={{ animationDelay: "0.1s" }}>
@@ -131,7 +131,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-border py-8">
-        <div className="container">
+        <div className="w-full max-w-6xl mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p>© 2025. Všechna práva vyhrazena.</p>
             <div className="flex gap-4">
