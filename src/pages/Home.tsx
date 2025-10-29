@@ -131,8 +131,21 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-border py-8">
-        <div className="container text-center text-muted-foreground">
-          <p>© 2025. Všechna práva vyhrazena.</p>
+        <div className="container">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+            <p>© 2025. Všechna práva vyhrazena.</p>
+            <div className="flex gap-4">
+              <Link to="/privacy-policy" className="hover:text-primary transition-colors">
+                Ochrana osobních údajů
+              </Link>
+              <Link to="/terms" className="hover:text-primary transition-colors">
+                Obchodní podmínky
+              </Link>
+              <Link to="/contact" className="hover:text-primary transition-colors">
+                Kontakt
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
     </div>;

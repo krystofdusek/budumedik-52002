@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PageLoader } from "@/components/PageLoader";
+import { CookieConsent } from "@/components/CookieConsent";
 import Home from "./pages/Home";
 import Contact from "./pages/Contact";
 import Auth from "./pages/Auth";
@@ -20,6 +21,8 @@ import Test from "./pages/Test";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminReported from "./pages/admin/AdminReported";
 import AdminUsers from "./pages/admin/AdminUsers";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +44,8 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard/tests" element={<TestGenerators />} />
         <Route path="/dashboard/progress" element={<Progress />} />
@@ -53,6 +58,7 @@ function AppRoutes() {
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <CookieConsent />
     </>
   );
 }
