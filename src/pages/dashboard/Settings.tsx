@@ -448,9 +448,9 @@ export default function Settings() {
                 
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div>
-                    <p className="font-medium">Resetovat statistiky</p>
+                    <p className="font-medium">Resetovat všechna data</p>
                     <p className="text-sm text-muted-foreground">
-                      Smazat veškerý pokrok, historii a statistiky
+                      Smazat veškerý pokrok, historii, statistiky a oblíbené otázky
                     </p>
                   </div>
                   <AlertDialog>
@@ -462,9 +462,15 @@ export default function Settings() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Opravdu chcete resetovat statistiky?</AlertDialogTitle>
+                        <AlertDialogTitle>Opravdu chcete resetovat všechna data?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Tato akce je nevratná. Smažou se všechny vaše odpovědi, výsledky testů a statistiky.
+                          Tato akce je nevratná. Budou smazána následující data:
+                          <ul className="mt-2 list-disc list-inside space-y-1">
+                            <li>Všechny statistiky (vynulovány na 0)</li>
+                            <li>Historie testů (kompletně smazána)</li>
+                            <li>Všechny odpovědi (% úspěšnosti se resetuje)</li>
+                            <li>Oblíbené otázky (všechny smazány)</li>
+                          </ul>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
