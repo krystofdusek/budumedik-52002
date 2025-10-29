@@ -235,18 +235,23 @@ export default function AdminUsers() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // First delete subscription
-      const { error: subError } = await supabase
-        .from('user_subscriptions')
-        .delete()
-        .eq('user_id', userId);
-
-      if (subError) throw subError;
-
-      // Then delete from auth.users using admin API
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (authError) throw authError;
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error('Failed to delete user');
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -257,11 +262,11 @@ export default function AdminUsers() {
         description: "Uživatel byl smazán",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error deleting user:', error);
       toast({
         title: "Chyba",
-        description: "Nepodařilo se smazat uživatele. Ujistěte se, že máte admin práva.",
+        description: error.message || "Nepodařilo se smazat uživatele",
         variant: "destructive",
       });
     },
