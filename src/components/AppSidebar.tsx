@@ -1,4 +1,4 @@
-import { Home, FileText, BarChart3, Settings, Shield, LogOut, Trophy, History, Upload } from "lucide-react";
+import { Home, FileText, BarChart3, Settings, Shield, LogOut, Trophy, History, Upload, MessageCircle, Newspaper } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -31,6 +31,7 @@ const adminItems = [
   { title: "Správa otázek", url: "/admin/questions", icon: Shield },
   { title: "Nahlášené otázky", url: "/admin/reported", icon: FileText },
   { title: "Správa uživatelů", url: "/admin/users", icon: Upload },
+  { title: "Správa blogu", url: "/admin/blog", icon: Newspaper },
 ];
 
 export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {}) {
@@ -38,9 +39,11 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     checkAdminStatus();
+    checkPremiumStatus();
   }, [isAdminProp]);
 
   const checkAdminStatus = async () => {
@@ -69,6 +72,19 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
 
     setIsAdmin(!!data);
     setIsLoading(false);
+  };
+
+  const checkPremiumStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('user_subscriptions')
+      .select('subscription_type')
+      .eq('user_id', user.id)
+      .single();
+
+    setIsPremium(data?.subscription_type === 'premium');
   };
 
   const handleLogout = async () => {
@@ -158,6 +174,29 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
             </SidebarGroupContent>
           </SidebarGroup>
         ) : null}
+
+        {isPremium && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Komunita</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <a 
+                      href="https://discord.gg/ZnvARNdzM6" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center"
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      <span>Discord Server</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup className="mt-auto">
           <SidebarGroupContent>
