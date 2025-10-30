@@ -156,15 +156,16 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <a 
-                    href="https://discord.com/invite/ZnvARNdzM6" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    <span>Discord Server</span>
-                  </a>
+                  <SidebarMenuButton asChild>
+                    <a 
+                      href="https://discord.gg/ZnvARNdzM6" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      <span>Discord Server</span>
+                    </a>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
