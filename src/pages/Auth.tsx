@@ -38,16 +38,14 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
 
-    const redirectTo = `${window.location.origin}/dashboard`;
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/email-verified`,
         data: {
           name: name,
         },
-        emailRedirectTo: redirectTo,
       },
     });
 
@@ -57,29 +55,25 @@ export default function Auth() {
         description: error.message,
         variant: "destructive",
       });
-      setIsLoading(false);
-      return;
-    }
-
-    // Send confirmation email
-    try {
-      const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
-        body: { email, password, redirectTo }
-      });
-
-      if (emailError) throw emailError;
-
-      toast({
-        title: "Registrace úspěšná",
-        description: "Zkontrolujte prosím svůj e-mail a potvrďte registraci.",
-      });
-    } catch (emailError: any) {
-      console.error('Error sending confirmation email:', emailError);
-      toast({
-        title: "Chyba",
-        description: "Nepodařilo se odeslat potvrzovací e-mail. Kontaktujte podporu.",
-        variant: "destructive",
-      });
+    } else {
+      try {
+        await supabase.functions.invoke("send-verification-email", {
+          body: {
+            email,
+            redirectTo: `${window.location.origin}/email-verified`,
+          },
+        });
+        toast({
+          title: "Registrace úspěšná",
+          description: "Ověřovací e‑mail byl odeslán. Zkontrolujte schránku.",
+        });
+      } catch (e: any) {
+        console.error("Failed to send verification email:", e);
+        toast({
+          title: "Registrace úspěšná",
+          description: "Ověřovací e‑mail se nepodařilo odeslat. Zkuste to později.",
+        });
+      }
     }
 
     setIsLoading(false);
