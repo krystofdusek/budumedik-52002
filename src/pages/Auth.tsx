@@ -52,14 +52,19 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          skipBrowserRedirect: false,
+        },
+      });
 
-    if (error) {
+      if (error) throw error;
+      
+      // Browser will redirect, so no need to handle success here
+    } catch (error: any) {
       toast({
         title: "Chyba při přihlášení",
         description: error.message,
