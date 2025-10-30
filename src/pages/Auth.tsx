@@ -64,12 +64,8 @@ export default function Auth() {
       if (error) throw error;
 
       if (data?.url) {
-        // Break out of Lovable preview iframe to avoid X-Frame-Options
-        if (window.top) {
-          (window.top as Window).location.href = data.url;
-        } else {
-          window.location.href = data.url;
-        }
+        // Open in new window to bypass iframe sandbox restrictions
+        window.open(data.url, '_blank');
       } else {
         throw new Error('Nepodařilo se získat URL pro přihlášení.');
       }
