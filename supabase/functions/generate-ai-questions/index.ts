@@ -33,28 +33,34 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl!, supabaseKey!);
-    const body = await req.json();
-    const { facultyId, subjectId, categoryId, count = 10, personalizedForUser = false, userId } = body;
 
-    if (!userId) {
-      return new Response(JSON.stringify({
-        error: 'Missing userId'
-      }), {
-        status: 401,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
+    // Get authenticated user from JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Missing authorization header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
 
-    const user = {
-      id: userId
-    };
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    const userId = user.id;
+
+    const body = await req.json();
+    const { facultyId, subjectId, categoryId, count = 10, personalizedForUser = false } = body;
 
     if (!facultyId) {
       return new Response(JSON.stringify({
-        error: 'Missing required field: facultyId'
+        error: 'Missing facultyId'
       }), {
         status: 400,
         headers: {

@@ -247,7 +247,6 @@ export default function TestGenerators() {
 
       const { data, error } = await supabase.functions.invoke('generate-ai-questions', {
         body: {
-          userId: user.id,
           subjectId: selectedSubject || null,
           categoryId: selectedCategory && selectedCategory !== 'all' ? selectedCategory : null,
           facultyId: favoriteFaculty,
