@@ -531,56 +531,46 @@ PRAVIDLA:
               const questions = parsed.questions || [];
               console.log(`✅ Generated ${questions.length} questions for ${subject.name} - ${category.name}`);
               return questions.map((q: any, idx: number) => {
-                let hasMultipleAnswers = false;
-                let correctAnswerValue = null;
-                let correctAnswersValue = null;
-                if (Array.isArray(q.correct_answer)) {
-                  hasMultipleAnswers = q.correct_answer.length > 1;
-                  if (hasMultipleAnswers) {
-                    correctAnswersValue = q.correct_answer.map((a: any) => a.toString().toUpperCase().trim());
-                    console.log(`🔢 Q${idx + 1} Multi-answer (array):`, correctAnswersValue);
-                  } else {
-                    correctAnswerValue = q.correct_answer[0].toString().toUpperCase().trim();
-                    console.log(`✓ Q${idx + 1} Single-answer (array[0]):`, correctAnswerValue);
-                  }
-                } else if (typeof q.correct_answer === 'string') {
-                  const answerStr = q.correct_answer.toString().toUpperCase().trim();
-                  if (answerStr.includes(',') || answerStr.includes('+') || answerStr.includes(' ')) {
-                    const parts = answerStr.split(/[,+\s]+/).filter((p: string) => p.length > 0);
-                    if (parts.length > 1) {
-                      hasMultipleAnswers = true;
-                      correctAnswersValue = parts;
-                      console.log(`🔢 Q${idx + 1} Multi-answer (parsed string):`, correctAnswersValue);
-                    } else {
-                      correctAnswerValue = answerStr;
-                      console.log(`✓ Q${idx + 1} Single-answer (string):`, correctAnswerValue);
-                    }
-                  } else {
-                    correctAnswerValue = answerStr;
-                    console.log(`✓ Q${idx + 1} Single-answer (string):`, correctAnswerValue);
-                  }
+              let hasMultipleAnswers = false;
+              let correctAnswersArray: string[] = [];
+              
+              if (Array.isArray(q.correct_answer)) {
+                correctAnswersArray = q.correct_answer.map((a: any) => a.toString().toUpperCase().trim());
+                hasMultipleAnswers = correctAnswersArray.length > 1;
+                console.log(`🔢 Q${idx + 1} Answers (array):`, correctAnswersArray);
+              } else if (typeof q.correct_answer === 'string') {
+                const answerStr = q.correct_answer.toString().toUpperCase().trim();
+                if (answerStr.includes(',') || answerStr.includes('+') || answerStr.includes(' ')) {
+                  const parts = answerStr.split(/[,+\s]+/).filter((p: string) => p.length > 0);
+                  correctAnswersArray = parts;
+                  hasMultipleAnswers = parts.length > 1;
+                  console.log(`🔢 Q${idx + 1} Answers (parsed string):`, correctAnswersArray);
+                } else {
+                  correctAnswersArray = [answerStr];
+                  console.log(`✓ Q${idx + 1} Single answer:`, correctAnswersArray);
                 }
-                let finalOptionE = q.option_e || null;
-                if (isBrno && !finalOptionE) {
-                  finalOptionE = 'Žádná odpověď není správná';
-                  console.log(`⚠️ Q${idx + 1} MUNI - Adding missing option_e`);
-                }
-                return {
-                  faculty_id: facultyId,
-                  subject_id: subject.id,
-                  category_id: category.id,
-                  question_text: q.question_text,
-                  option_a: q.option_a,
-                  option_b: q.option_b,
-                  option_c: q.option_c,
-                  option_d: q.option_d,
-                  option_e: finalOptionE,
-                  correct_answer: correctAnswerValue,
-                  correct_answers: correctAnswersValue,
-                  requires_confirmation: hasMultipleAnswers,
-                  explanation: q.explanation,
-                  is_ai_generated: true
-                };
+              }
+              
+              let finalOptionE = q.option_e || null;
+              if (isBrno && !finalOptionE) {
+                finalOptionE = 'Žádná odpověď není správná';
+                console.log(`⚠️ Q${idx + 1} MUNI - Adding missing option_e`);
+              }
+              
+              return {
+                faculty_id: facultyId,
+                subject_id: subject.id,
+                category_id: category.id,
+                question_text: q.question_text,
+                option_a: q.option_a,
+                option_b: q.option_b,
+                option_c: q.option_c,
+                option_d: q.option_d,
+                option_e: finalOptionE,
+                correct_answers: correctAnswersArray,
+                explanation: q.explanation,
+                is_ai_generated: true
+              };
               });
             } catch (err) {
               console.error('❌ Failed to parse OpenAI response for', subject.name, category.name, ':', err);
