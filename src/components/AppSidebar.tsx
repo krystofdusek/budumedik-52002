@@ -1,16 +1,4 @@
-import {
-  Home,
-  FileText,
-  BarChart3,
-  Settings,
-  Shield,
-  LogOut,
-  Trophy,
-  History,
-  Upload,
-  MessageCircle,
-  Newspaper,
-} from "lucide-react";
+import { Home, FileText, BarChart3, Settings, Shield, LogOut, Trophy, History, Upload, MessageCircle, Newspaper } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -62,18 +50,16 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
   }, []);
 
   const checkPremiumStatus = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const { data } = await supabase
-      .from("user_subscriptions")
-      .select("subscription_type")
-      .eq("user_id", user.id)
+      .from('user_subscriptions')
+      .select('subscription_type')
+      .eq('user_id', user.id)
       .single();
 
-    setIsPremium(data?.subscription_type === "premium");
+    setIsPremium(data?.subscription_type === 'premium');
   };
 
   const handleLogout = async () => {
@@ -89,10 +75,10 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
     <Sidebar className="border-r border-border hidden md:flex">
       <SidebarHeader className="border-b border-border p-4">
         <div className="flex items-center justify-center">
-          <img
-            src={logo}
-            alt="Logo"
-            className="h-32 w-auto invert dark:invert-0 transition-transform hover:scale-105"
+          <img 
+            src={logo} 
+            alt="Logo" 
+            className="h-32 w-auto invert dark:invert-0 transition-transform hover:scale-105" 
           />
         </div>
       </SidebarHeader>
@@ -108,7 +94,11 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
                     <NavLink
                       to={item.url}
                       end={item.url === "/dashboard"}
-                      className={({ isActive }) => (isActive ? "bg-blue-500/20" : "")}
+                      className={({ isActive }) =>
+                        isActive
+                          ? "bg-blue-500/20"
+                          : ""
+                      }
                     >
                       <item.icon className="mr-2 h-4 w-4" />
                       <span>{item.title}</span>
@@ -141,7 +131,14 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
                 {adminItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink to={item.url} className={({ isActive }) => (isActive ? "bg-blue-500/20" : "")}>
+                      <NavLink
+                        to={item.url}
+                        className={({ isActive }) =>
+                          isActive
+                            ? "bg-blue-500/20"
+                            : ""
+                        }
+                      >
                         <item.icon className="mr-2 h-4 w-4" />
                         <span>{item.title}</span>
                       </NavLink>
@@ -162,7 +159,7 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
                   <SidebarMenuButton
                     onClick={(e) => {
                       e.preventDefault();
-                      window.location.href = "https://discord.com/invite/ZnvARNdzM6";
+                      window.open('https://discord.gg/ZnvARNdzM6', '_blank', 'noopener,noreferrer');
                     }}
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
