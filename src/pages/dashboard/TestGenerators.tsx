@@ -234,12 +234,25 @@ export default function TestGenerators() {
 
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Chyba autentizace",
+          description: "Nejste přihlášeni",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-ai-questions', {
         body: {
+          userId: user.id,
           subjectId: selectedSubject || null,
           categoryId: selectedCategory && selectedCategory !== 'all' ? selectedCategory : null,
           facultyId: favoriteFaculty,
-          count: questionCount
+          count: questionCount,
+          personalizedForUser: hasHistoricalData
         }
       });
 
@@ -276,17 +289,16 @@ export default function TestGenerators() {
         await refetchSubscription();
       }
 
-      // Show personalization info
-      if (!data.hasHistoricalData || !data.personalized) {
-        toast({
-          title: "Test bez personalizace",
-          description: `Nemáte žádná historická data pro vybrané filtry (${data.totalAnswered || 0} zodpovězených otázek). Test bude vygenerován bez personalizace.`,
-          variant: "default"
-        });
-      } else if (data.personalized && data.weakAreasCount > 0) {
+      // Show success message
+      if (data.personalized && data.weakAreas) {
         toast({
           title: "✨ Personalizovaný test vytvořen",
-          description: `Otázky podobné těm, ve kterých jste chybovali - zaměřené na ${data.weakAreasCount} slabých oblastí`,
+          description: `Test zaměřený na vaše slabé oblasti`,
+        });
+      } else {
+        toast({
+          title: "AI test vytvořen",
+          description: `Vygenerováno ${data.count} otázek`,
         });
       }
 
