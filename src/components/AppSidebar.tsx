@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
@@ -37,42 +38,16 @@ const adminItems = [
 export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {}) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { isAdmin: isAdminFromHook, loading: isLoadingAdmin } = useAdmin();
   const [isPremium, setIsPremium] = useState(false);
 
+  // Use prop if provided, otherwise use hook
+  const isAdmin = isAdminProp !== undefined ? isAdminProp : isAdminFromHook;
+  const isLoading = isAdminProp !== undefined ? false : isLoadingAdmin;
+
   useEffect(() => {
-    checkAdminStatus();
     checkPremiumStatus();
-  }, [isAdminProp]);
-
-  const checkAdminStatus = async () => {
-    setIsLoading(true);
-    
-    // If prop is provided, use it
-    if (isAdminProp !== undefined) {
-      setIsAdmin(isAdminProp);
-      setIsLoading(false);
-      return;
-    }
-
-    // Otherwise check from database
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    setIsAdmin(!!data);
-    setIsLoading(false);
-  };
+  }, []);
 
   const checkPremiumStatus = async () => {
     const { data: { user } } = await supabase.auth.getUser();

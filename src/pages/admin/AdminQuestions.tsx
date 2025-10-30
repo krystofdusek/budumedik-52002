@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { sortFacultiesByCity } from "@/lib/facultySort";
 import logo from "@/assets/logo.png";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const questionSchema = z.object({
   question_text: z.string().trim().min(10, "Otázka musí mít alespoň 10 znaků").max(1000, "Otázka může mít maximálně 1000 znaků"),
@@ -41,7 +42,7 @@ export default function AdminQuestions() {
   const [faculties, setFaculties] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin, loading: isLoadingAdmin } = useAdmin();
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -70,24 +71,13 @@ export default function AdminQuestions() {
   });
 
   useEffect(() => {
-    checkAdmin();
-  }, []);
-
-  const checkAdmin = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/auth");
-      return;
+    if (!isLoadingAdmin) {
+      checkAdminAccess();
     }
+  }, [isLoadingAdmin, isAdmin]);
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .single();
-
-    if (!roles) {
+  const checkAdminAccess = () => {
+    if (!isAdmin) {
       toast({
         title: "Přístup odepřen",
         description: "Nemáte oprávnění k této stránce",
@@ -96,8 +86,6 @@ export default function AdminQuestions() {
       navigate("/dashboard");
       return;
     }
-
-    setIsAdmin(true);
     loadData();
   };
 

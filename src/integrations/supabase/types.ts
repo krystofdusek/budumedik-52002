@@ -195,6 +195,7 @@ export type Database = {
           favorite_faculty_id: string | null
           id: string
           name: string | null
+          show_on_leaderboard: boolean
           updated_at: string
         }
         Insert: {
@@ -203,6 +204,7 @@ export type Database = {
           favorite_faculty_id?: string | null
           id: string
           name?: string | null
+          show_on_leaderboard?: boolean
           updated_at?: string
         }
         Update: {
@@ -211,6 +213,7 @@ export type Database = {
           favorite_faculty_id?: string | null
           id?: string
           name?: string | null
+          show_on_leaderboard?: boolean
           updated_at?: string
         }
         Relationships: [

@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Loader2, Trash2, Crown, Calendar } from "lucide-react";
+import { Loader2, Trash2, Crown, Calendar, Eye, EyeOff } from "lucide-react";
+import { useAdmin } from "@/hooks/useAdmin";
 import logo from "@/assets/logo.png";
 import { sortFacultiesByCity } from "@/lib/facultySort";
 import { Badge } from "@/components/ui/badge";
@@ -35,11 +36,13 @@ export default function Settings() {
   const [faculties, setFaculties] = useState<any[]>([]);
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin } = useAdmin();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [showOnLeaderboard, setShowOnLeaderboard] = useState(false);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   const { data: subscription } = useQuery({
     queryKey: ["user-subscription", userId],
@@ -72,25 +75,17 @@ export default function Settings() {
 
     setUserId(user.id);
 
-    // Check admin status
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-    
-    setIsAdmin(!!roleData);
-
     const { data: profile } = await supabase
       .from('profiles')
-      .select('favorite_faculty_id')
+      .select('favorite_faculty_id, show_on_leaderboard')
       .eq('id', user.id)
       .single();
     
     if (profile?.favorite_faculty_id) {
       setSelectedFaculty(profile.favorite_faculty_id);
     }
+    
+    setShowOnLeaderboard(profile?.show_on_leaderboard || false);
   };
 
   const handlePasswordChange = async () => {
@@ -361,6 +356,75 @@ export default function Settings() {
                       </>
                     ) : (
                       'Uložit'
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Soukromí</CardTitle>
+                <CardDescription>
+                  Spravujte viditelnost vašich dat
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Zobrazit na žebříčku</p>
+                    <p className="text-sm text-muted-foreground">
+                      {showOnLeaderboard 
+                        ? "Vaše statistiky jsou viditelné na žebříčku" 
+                        : "Vaše statistiky jsou skryté (vidíte pouze sebe)"}
+                    </p>
+                  </div>
+                  <Button
+                    variant={showOnLeaderboard ? "default" : "outline"}
+                    size="sm"
+                    onClick={async () => {
+                      setLeaderboardLoading(true);
+                      try {
+                        const newValue = !showOnLeaderboard;
+                        const { error } = await supabase
+                          .from('profiles')
+                          .update({ show_on_leaderboard: newValue })
+                          .eq('id', userId);
+
+                        if (error) throw error;
+
+                        setShowOnLeaderboard(newValue);
+                        toast({
+                          title: "Uloženo",
+                          description: newValue 
+                            ? "Nyní jste viditelní na žebříčku" 
+                            : "Vaše data jsou nyní soukromá",
+                        });
+                      } catch (error) {
+                        console.error('Error updating leaderboard visibility:', error);
+                        toast({
+                          title: "Chyba",
+                          description: "Nepodařilo se uložit nastavení",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setLeaderboardLoading(false);
+                      }
+                    }}
+                    disabled={leaderboardLoading}
+                  >
+                    {leaderboardLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : showOnLeaderboard ? (
+                      <>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Viditelný
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-4 w-4 mr-2" />
+                        Skrytý
+                      </>
                     )}
                   </Button>
                 </div>

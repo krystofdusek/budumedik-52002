@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useAdmin } from "@/hooks/useAdmin";
 
 type FacultyComparison = {
   yourSuccessRate: number;
@@ -25,28 +26,19 @@ type FacultyComparison = {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin } = useAdmin();
   const [facultyComparison, setFacultyComparison] = useState<FacultyComparison | null>(null);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
 
   useEffect(() => {
-    checkAdminStatus();
+    loadUserData();
   }, []);
 
-  const checkAdminStatus = async () => {
+  const loadUserData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     setUserId(user.id);
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-    
-    setIsAdmin(!!roleData);
 
     // Load faculty comparison
     const { data: profile } = await supabase

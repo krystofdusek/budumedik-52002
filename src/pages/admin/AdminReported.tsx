@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface Report {
   id: string;
@@ -48,27 +49,16 @@ export default function AdminReported() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin, loading: isLoadingAdmin } = useAdmin();
 
   useEffect(() => {
-    checkAdmin();
-  }, []);
-
-  const checkAdmin = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/auth");
-      return;
+    if (!isLoadingAdmin) {
+      checkAdminAccess();
     }
+  }, [isLoadingAdmin, isAdmin]);
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .single();
-
-    if (!roles) {
+  const checkAdminAccess = () => {
+    if (!isAdmin) {
       toast({
         title: "Přístup odepřen",
         description: "Nemáte oprávnění k této stránce",
@@ -77,8 +67,6 @@ export default function AdminReported() {
       navigate("/dashboard");
       return;
     }
-
-    setIsAdmin(true);
     loadReports();
   };
 
