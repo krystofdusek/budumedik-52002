@@ -56,10 +56,24 @@ export default function Auth() {
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Registrace úspěšná",
-        description: "Můžete se přihlásit",
-      });
+      try {
+        await supabase.functions.invoke("send-verification-email", {
+          body: {
+            email,
+            redirectTo: `${window.location.origin}/email-verified`,
+          },
+        });
+        toast({
+          title: "Registrace úspěšná",
+          description: "Ověřovací e‑mail byl odeslán. Zkontrolujte schránku.",
+        });
+      } catch (e: any) {
+        console.error("Failed to send verification email:", e);
+        toast({
+          title: "Registrace úspěšná",
+          description: "Ověřovací e‑mail se nepodařilo odeslat. Zkuste to později.",
+        });
+      }
     }
 
     setIsLoading(false);
