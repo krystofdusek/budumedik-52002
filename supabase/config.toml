@@ -9,3 +9,6 @@ verify_jwt = true
 [functions.import-3lf-chemistry]
 verify_jwt = true
 
+[functions.send-verification-email]
+verify_jwt = false
+
