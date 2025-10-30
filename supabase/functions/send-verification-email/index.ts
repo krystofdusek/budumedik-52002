@@ -1,5 +1,4 @@
 import { Resend } from 'https://esm.sh/resend@4.0.0'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,13 +6,10 @@ const corsHeaders = {
 }
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') as string
-const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
-
-const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_KEY)
 
 interface VerificationEmailRequest {
   email: string
+  token?: string
   redirectTo?: string
 }
 
@@ -34,59 +30,21 @@ Deno.serve(async (req) => {
 
   try {
     const { email, redirectTo }: VerificationEmailRequest = await req.json()
-    console.log('Received request for email:', email)
+    console.log('📧 Received request for email:', email)
 
     if (!email) {
-      console.error('Missing email in request')
+      console.error('❌ Missing email in request')
       return new Response(JSON.stringify({ error: 'Missing email' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
     }
 
-    const safeRedirect = redirectTo || `${SUPABASE_URL}/email-verified`
-    console.log('Redirect URL:', safeRedirect)
+    const safeRedirect = redirectTo || 'https://jcabdfmvjblzulnvvuso.supabase.co/email-verified'
+    const verificationLink = safeRedirect
+    console.log('🔗 Using redirect URL:', safeRedirect)
 
-    // Get the user to generate a recovery/verification link
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers()
-    
-    if (userError) {
-      console.error('Error listing users:', userError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to find user' }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
-    }
-
-    const user = userData.users.find(u => u.email === email)
-    
-    if (!user) {
-      console.error('User not found:', email)
-      return new Response(
-        JSON.stringify({ error: 'User not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
-    }
-
-    // Generate recovery link which can be used for email verification
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email,
-      options: { redirectTo: safeRedirect },
-    })
-
-    if (linkError || !linkData?.properties?.action_link) {
-      console.error('generateLink error:', linkError)
-      return new Response(
-        JSON.stringify({ error: linkError?.message || 'Failed to generate verification link' }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
-    }
-
-    const verificationLink = linkData.properties.action_link
-    console.log('Generated verification link')
-
-    // Create HTML email
+    // Create HTML email with simple verification message
     const html = `
       <!DOCTYPE html>
       <html>
@@ -105,13 +63,13 @@ Deno.serve(async (req) => {
                         Vítejte v Budu Medik!
                       </h1>
                       <p style="color: #334155; font-size: 16px; line-height: 24px; margin: 16px 0;">
-                        Děkujeme za registraci. Pro dokončení nastavení účtu prosím ověřte svou e‑mailovou adresu kliknutím na tlačítko níže.
+                        Děkujeme za registraci. Váš účet byl úspěšně vytvořen a nyní se můžete přihlásit.
                       </p>
                       <table width="100%" cellpadding="0" cellspacing="0" style="margin: 28px 0;">
                         <tr>
                           <td align="center">
                             <a href="${verificationLink}" target="_blank" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 10px; color: #ffffff; display: inline-block; font-size: 16px; font-weight: 700; padding: 14px 28px; text-decoration: none; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);">
-                              Ověřit e‑mailovou adresu
+                              Přejít na dashboard
                             </a>
                           </td>
                         </tr>
@@ -133,16 +91,16 @@ Deno.serve(async (req) => {
       </html>
     `
 
-    console.log('Sending email via Resend...')
+    console.log('📤 Sending email via Resend...')
     const { data: emailData, error: sendError } = await resend.emails.send({
       from: 'Budu Medik <info@budumedik.cz>',
       to: [email],
-      subject: 'Ověřte svůj e‑mail – Budu Medik',
+      subject: 'Vítejte v Budu Medik!',
       html,
     })
 
     if (sendError) {
-      console.error('Resend error:', sendError)
+      console.error('❌ Resend error:', sendError)
       return new Response(JSON.stringify({ error: sendError.message }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -155,7 +113,7 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
   } catch (error: any) {
-    console.error('Unexpected error:', error)
+    console.error('💥 Unexpected error:', error)
     return new Response(JSON.stringify({ error: error?.message || 'Unknown error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
