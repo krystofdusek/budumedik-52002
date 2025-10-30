@@ -13,15 +13,12 @@ const EmailVerified = () => {
   useEffect(() => {
     const checkVerification = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error checking session:", error);
-          setVerificationStatus("error");
-          return;
-        }
+        // Check URL hash for verification
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
 
-        if (session) {
+        if (accessToken && type === 'signup') {
           setVerificationStatus("success");
           
           // Start countdown for redirect
@@ -38,7 +35,24 @@ const EmailVerified = () => {
           
           return () => clearInterval(timer);
         } else {
-          setVerificationStatus("error");
+          // Check if user is already logged in
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setVerificationStatus("success");
+            const timer = setInterval(() => {
+              setCountdown((prev) => {
+                if (prev <= 1) {
+                  clearInterval(timer);
+                  navigate("/dashboard");
+                  return 0;
+                }
+                return prev - 1;
+              });
+            }, 1000);
+            return () => clearInterval(timer);
+          } else {
+            setVerificationStatus("error");
+          }
         }
       } catch (error) {
         console.error("Error during verification check:", error);
