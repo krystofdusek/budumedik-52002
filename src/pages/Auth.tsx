@@ -53,14 +53,27 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
+          skipBrowserRedirect: true,
         },
       });
 
       if (error) throw error;
+
+      if (data?.url) {
+        try {
+          // Prefer navigation in the same window (and escalate to top if inside iframe)
+          const target = window.top ?? window;
+          target.location.href = data.url;
+        } catch {
+          window.location.href = data.url;
+        }
+      } else {
+        throw new Error('Nepodařilo se získat URL pro přihlášení.');
+      }
     } catch (error: any) {
       toast({
         title: "Chyba při přihlášení",
