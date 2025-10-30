@@ -1,4 +1,5 @@
 import { Resend } from 'https://esm.sh/resend@4.0.0'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,6 +7,17 @@ const corsHeaders = {
 }
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
+
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 interface VerificationEmailRequest {
   email: string
@@ -40,9 +52,28 @@ Deno.serve(async (req) => {
       })
     }
 
-    const safeRedirect = redirectTo || 'https://jcabdfmvjblzulnvvuso.supabase.co/email-verified'
-    const verificationLink = safeRedirect
-    console.log('🔗 Using redirect URL:', safeRedirect)
+    const safeRedirect = redirectTo || `https://84d409b6-3478-43f8-a1ea-1e052e61e2bf.lovableproject.com/email-verified`
+    console.log('🔗 Generating magic link for redirect:', safeRedirect)
+
+    // Generate magic link for email verification
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+      options: {
+        redirectTo: safeRedirect
+      }
+    })
+
+    if (linkError) {
+      console.error('❌ Error generating magic link:', linkError)
+      return new Response(JSON.stringify({ error: linkError.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      })
+    }
+
+    const verificationLink = linkData?.properties?.action_link || safeRedirect
+    console.log('✅ Generated verification link')
 
     // Create HTML email with simple verification message
     const html = `
@@ -62,15 +93,15 @@ Deno.serve(async (req) => {
                       <h1 style="color: #0f172a; font-size: 28px; font-weight: 800; margin: 0 0 16px; text-align: center;">
                         Vítejte v Budu Medik!
                       </h1>
-                      <p style="color: #334155; font-size: 16px; line-height: 24px; margin: 16px 0;">
-                        Děkujeme za registraci. Váš účet byl úspěšně vytvořen a nyní se můžete přihlásit.
-                      </p>
+                       <p style="color: #334155; font-size: 16px; line-height: 24px; margin: 16px 0;">
+                         Děkujeme za registraci! Pro dokončení registrace klikněte prosím na tlačítko níže a ověřte svůj email.
+                       </p>
                       <table width="100%" cellpadding="0" cellspacing="0" style="margin: 28px 0;">
                         <tr>
                           <td align="center">
-                            <a href="${verificationLink}" target="_blank" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 10px; color: #ffffff; display: inline-block; font-size: 16px; font-weight: 700; padding: 14px 28px; text-decoration: none; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);">
-                              Přejít na dashboard
-                            </a>
+                             <a href="${verificationLink}" target="_blank" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 10px; color: #ffffff; display: inline-block; font-size: 16px; font-weight: 700; padding: 14px 28px; text-decoration: none; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);">
+                               Ověřit email a pokračovat
+                             </a>
                           </td>
                         </tr>
                       </table>
