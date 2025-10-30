@@ -1,14 +1,4 @@
 project_id = "jcabdfmvjblzulnvvuso"
 
-[functions.generate-ai-questions]
-verify_jwt = true
-
-[functions.import-2lf-questions]
-verify_jwt = true
-
-[functions.import-3lf-chemistry]
-verify_jwt = true
-
 [functions.send-verification-email]
 verify_jwt = false
-

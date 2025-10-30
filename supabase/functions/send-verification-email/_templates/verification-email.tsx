@@ -12,47 +12,41 @@ import {
 import * as React from 'https://esm.sh/react@18.3.1'
 
 interface VerificationEmailProps {
-  supabase_url: string
-  email_action_type: string
-  redirect_to: string
-  token_hash: string
-  token: string
+  name?: string
+  action_link: string
+  token?: string
 }
 
-export const VerificationEmail = ({
-  token,
-  supabase_url,
-  email_action_type,
-  redirect_to,
-  token_hash,
-}: VerificationEmailProps) => (
+export const VerificationEmail = ({ name, action_link, token }: VerificationEmailProps) => (
   <Html>
     <Head />
-    <Preview>Potvrďte svou emailovou adresu</Preview>
+    <Preview>Ověřte svou e‑mailovou adresu</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Vítejte v MedPrep! 🎓</Heading>
+        <Heading style={h1}>Vítejte v Budu Medik{name ? `, ${name}` : ''}!</Heading>
         <Text style={text}>
-          Děkujeme za registraci. Pro dokončení nastavení vašeho účtu prosím ověřte svou emailovou adresu.
+          Děkujeme za registraci. Pro dokončení nastavení účtu prosím ověřte svou e‑mailovou adresu.
         </Text>
+
         <Section style={buttonContainer}>
-          <Link
-            href={`${supabase_url}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`}
-            style={button}
-          >
-            Ověřit emailovou adresu
+          <Link href={action_link} target="_blank" style={button}>
+            Ověřit e‑mailovou adresu
           </Link>
         </Section>
-        <Text style={text}>
-          Nebo zkopírujte tento ověřovací kód:
-        </Text>
-        <code style={code}>{token}</code>
+
+        {token ? (
+          <>
+            <Text style={text}>Případně zadejte tento jednorázový kód:</Text>
+            <code style={code}>{token}</code>
+          </>
+        ) : null}
+
         <Text style={disclaimer}>
-          Pokud jste se neregistrovali na MedPrep, můžete tento email bezpečně ignorovat.
+          Pokud jste se neregistrovali do Budu Medik, můžete tento e‑mail bezpečně ignorovat.
         </Text>
         <Text style={footer}>
           S pozdravem,<br />
-          Tým MedPrep
+          Tým Budu Medik
         </Text>
       </Container>
     </Body>
@@ -63,27 +57,29 @@ export default VerificationEmail
 
 const main = {
   backgroundColor: '#f6f9fc',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+  fontFamily:
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
 }
 
 const container = {
   backgroundColor: '#ffffff',
   margin: '0 auto',
-  padding: '40px 20px',
-  borderRadius: '8px',
+  padding: '40px 24px',
+  borderRadius: '12px',
   maxWidth: '600px',
+  boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
 }
 
 const h1 = {
-  color: '#1a1a1a',
+  color: '#0f172a',
   fontSize: '28px',
-  fontWeight: 'bold',
-  margin: '0 0 24px',
+  fontWeight: '800',
+  margin: '0 0 16px',
   textAlign: 'center' as const,
 }
 
 const text = {
-  color: '#4a4a4a',
+  color: '#334155',
   fontSize: '16px',
   lineHeight: '24px',
   margin: '16px 0',
@@ -91,28 +87,29 @@ const text = {
 
 const buttonContainer = {
   textAlign: 'center' as const,
-  margin: '32px 0',
+  margin: '28px 0',
 }
 
 const button = {
-  backgroundColor: '#0066cc',
-  borderRadius: '6px',
+  background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+  borderRadius: '10px',
   color: '#ffffff',
   display: 'inline-block',
   fontSize: '16px',
-  fontWeight: 'bold',
-  padding: '14px 32px',
+  fontWeight: 700,
+  padding: '14px 28px',
   textDecoration: 'none',
   textAlign: 'center' as const,
+  boxShadow: '0 8px 20px rgba(124, 58, 237, 0.25)',
 }
 
 const code = {
   display: 'block',
   padding: '16px',
-  backgroundColor: '#f4f4f4',
-  borderRadius: '6px',
-  border: '1px solid #e0e0e0',
-  color: '#1a1a1a',
+  backgroundColor: '#f1f5f9',
+  borderRadius: '8px',
+  border: '1px solid #e2e8f0',
+  color: '#0f172a',
   fontSize: '14px',
   fontFamily: 'monospace',
   textAlign: 'center' as const,
@@ -120,17 +117,17 @@ const code = {
 }
 
 const disclaimer = {
-  color: '#8a8a8a',
+  color: '#64748b',
   fontSize: '14px',
   lineHeight: '20px',
   margin: '24px 0 16px',
 }
 
 const footer = {
-  color: '#8a8a8a',
+  color: '#64748b',
   fontSize: '14px',
   lineHeight: '20px',
-  marginTop: '32px',
-  borderTop: '1px solid #e0e0e0',
-  paddingTop: '24px',
+  marginTop: '24px',
+  borderTop: '1px solid #e2e8f0',
+  paddingTop: '16px',
 }
