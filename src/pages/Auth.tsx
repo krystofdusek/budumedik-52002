@@ -19,13 +19,16 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Check for existing session and listen for auth changes
   useEffect(() => {
+    // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate("/dashboard");
       }
     });
 
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         navigate("/dashboard");
@@ -35,53 +38,9 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/email-verified`,
-        data: {
-          name: name,
-        },
-      },
-    });
-
-    if (error) {
-      toast({
-        title: "Chyba při registraci",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      try {
-        await supabase.functions.invoke("send-verification-email", {
-          body: {
-            email,
-            redirectTo: `${window.location.origin}/email-verified`,
-          },
-        });
-        toast({
-          title: "Registrace úspěšná",
-          description: "Ověřovací e‑mail byl odeslán. Zkontrolujte schránku.",
-        });
-      } catch (e: any) {
-        console.error("Failed to send verification email:", e);
-        toast({
-          title: "Registrace úspěšná",
-          description: "Ověřovací e‑mail se nepodařilo odeslat. Zkuste to později.",
-        });
-      }
-    }
-
-    setIsLoading(false);
-  };
-
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -90,33 +49,115 @@ export default function Auth() {
     });
 
     if (error) {
+      console.error("Google sign-in error:", error);
       toast({
-        title: "Chyba při přihlášení",
+        title: "Chyba při přihlášení přes Google",
         description: error.message,
         variant: "destructive",
       });
       setIsLoading(false);
     }
+    // Note: Loading state stays true as user is redirected to Google
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
+    
+    if (!email || !password || !name) {
       toast({
-        title: "Chyba při přihlášení",
-        description: error.message,
+        title: "Chyba",
+        description: "Vyplňte prosím všechna pole",
         variant: "destructive",
       });
+      return;
     }
 
-    setIsLoading(false);
+    setIsLoading(true);
+
+    try {
+      // Sign up user
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/email-verified`,
+          data: {
+            name: name,
+          },
+        },
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      // Send verification email via Resend
+      const { error: emailError } = await supabase.functions.invoke("send-verification-email", {
+        body: {
+          email,
+          redirectTo: `${window.location.origin}/email-verified`,
+        },
+      });
+
+      if (emailError) {
+        console.error("Email send error:", emailError);
+      }
+
+      toast({
+        title: "Registrace úspěšná!",
+        description: "Zkontrolujte svůj email a klikněte na ověřovací odkaz.",
+      });
+
+      // Clear form
+      setEmail("");
+      setPassword("");
+      setName("");
+    } catch (error: any) {
+      console.error("Sign up error:", error);
+      toast({
+        title: "Chyba při registraci",
+        description: error.message || "Něco se pokazilo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Chyba",
+        description: "Vyplňte prosím email a heslo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // Navigate happens via onAuthStateChange
+    } catch (error: any) {
+      console.error("Sign in error:", error);
+      toast({
+        title: "Chyba při přihlášení",
+        description: error.message || "Nesprávný email nebo heslo",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -145,7 +186,7 @@ export default function Auth() {
             </TabsList>
             
             <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
+              <form onSubmit={handleEmailSignIn} className="space-y-4">
                 <Button
                   type="button"
                   variant="outline"
@@ -259,7 +300,7 @@ export default function Auth() {
                 </div>
               </div>
 
-              <form onSubmit={handleSignUp} className="space-y-4">
+              <form onSubmit={handleEmailSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Jméno</Label>
                   <Input
