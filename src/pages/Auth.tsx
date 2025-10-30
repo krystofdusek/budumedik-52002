@@ -57,13 +57,22 @@ export default function Auth() {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
-          skipBrowserRedirect: false,
+          skipBrowserRedirect: true,
         },
       });
 
       if (error) throw error;
-      
-      // Browser will redirect, so no need to handle success here
+
+      if (data?.url) {
+        // Break out of Lovable preview iframe to avoid X-Frame-Options
+        if (window.top) {
+          (window.top as Window).location.href = data.url;
+        } else {
+          window.location.href = data.url;
+        }
+      } else {
+        throw new Error('Nepodařilo se získat URL pro přihlášení.');
+      }
     } catch (error: any) {
       toast({
         title: "Chyba při přihlášení",
