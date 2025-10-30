@@ -216,9 +216,10 @@ Otázky musí být NÁROČNÉ a testovat přesně ty věci, ve kterých student 
         }
       }
       let wrongAnswersQuery = supabase
-        .from('wrong_answers')
-        .select('question_id, questions(id, question_text, option_a, option_b, option_c, option_d, option_e, correct_answer, correct_answers, explanation, subject_id, category_id, subjects(name), categories(name))')
-        .eq('user_id', user.id);
+        .from('user_answers')
+        .select('question_id, is_correct, questions(id, question_text, option_a, option_b, option_c, option_d, option_e, correct_answers, explanation, subject_id, category_id, subjects(name), categories(name))')
+        .eq('user_id', user.id)
+        .eq('is_correct', false);
       if (subjectId) {
         wrongAnswersQuery = wrongAnswersQuery.eq('questions.subject_id', subjectId);
       }
@@ -229,7 +230,7 @@ Otázky musí být NÁROČNÉ a testovat přesně ty věci, ve kterých student 
         .order('created_at', {
           ascending: false
         })
-        .limit(30);
+        .limit(50);
       if (wrongAnswers && wrongAnswers.length > 0) {
         const errorPatterns = wrongAnswers
           .map((wa: any) => {
@@ -244,7 +245,7 @@ Otázky musí být NÁROČNÉ a testovat přesně ty věci, ve kterých student 
               optionC: q.option_c,
               optionD: q.option_d,
               optionE: q.option_e,
-              correctAnswer: q.correct_answers ? q.correct_answers.join('+') : q.correct_answer,
+              correctAnswer: q.correct_answers ? q.correct_answers.join('+') : 'N/A',
               explanation: q.explanation
             };
           })
@@ -264,7 +265,7 @@ Otázky musí být NÁROČNÉ a testovat přesně ty věci, ve kterých student 
             personalizationContext += `\n\n❌ TOP KATEGORIE S CHYBAMI: ${topErrorCategories.join(', ')}`;
           }
           const fullErrorExamples = errorPatterns
-            .slice(0, 5)
+            .slice(0, 8)
             .map((p: any, i: number) => `\n━━━ CHYBNÁ OTÁZKA #${i + 1} ━━━
 ${p?.subject} → ${p?.category}
 Otázka: ${p?.text}
@@ -276,9 +277,24 @@ D) ${p?.optionD}${p?.optionE ? `\nE) ${p.optionE}` : ''}
 💡 ${p?.explanation || 'Bez vysvětlení'}`)
             .join('\n');
           if (fullErrorExamples) {
-            personalizationContext += `\n\n📋 KONKRÉTNÍ OTÁZKY, VE KTERÝCH STUDENT UDĚLAL CHYBY:${fullErrorExamples}
+            personalizationContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 ANALÝZA CHYBNÝCH ODPOVĚDÍ STUDENTA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${fullErrorExamples}
 
-🎯 VYTVOŘ PODOBNÉ OTÁZKY: Stejný styl, podobná témata, stejná náročnost. Student musí procvičit PŘESNĚ tyhle koncepty!`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 TVŮJ ÚKOL - PERSONALIZOVANÝ TEST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Na základě těchto chybných odpovědí vytvoř otázky které:
+
+✅ Testují PŘESNĚ ty koncepty kde student chyboval
+✅ Mají STEJNOU náročnost jako chybné otázky
+✅ Jsou formulované PODOBNÝM stylem
+✅ Zaměřují se na STEJNÁ témata a kategorie
+✅ Nutí studenta ZNOVU se zamyslet nad těmito koncepty
+
+⚠️ KLÍČOVÉ: Student musí pochopit PROČ chyboval. Vytvoř otázky které testují jeho chápání základních principů v těchto problémových oblastech!`;
           }
         }
       }
@@ -304,12 +320,12 @@ D) ${p?.optionD}${p?.optionE ? `\nE) ${p.optionE}` : ''}
         console.log(`📝 Generating ${questionsForThis} questions for ${subject.name} - ${category.name}`);
         const { data: realQuestions } = await supabase
           .from('questions')
-          .select('question_text, option_a, option_b, option_c, option_d, option_e, correct_answer, correct_answers, explanation')
+          .select('question_text, option_a, option_b, option_c, option_d, option_e, correct_answers, explanation')
           .eq('faculty_id', facultyId)
           .eq('subject_id', subject.id)
           .eq('category_id', category.id)
           .eq('is_ai_generated', false)
-          .limit(10);
+          .limit(15);
         let inspirationContext = '';
         if (realQuestions && realQuestions.length > 0) {
           const examples = realQuestions
@@ -416,14 +432,31 @@ Příklady:
 ${facultySpec}${physicsRequirement}${inspirationContext}${personalizationContext}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📏 FORMÁTOVACÍ POŽADAVKY (KRITICKÉ!):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ OTÁZKY A ODPOVĚDI MUSÍ BÝT KRÁTKÉ A STRUČNÉ!
+
+✅ Otázka: Max 2 věty (ideálně 1 věta, max 150 znaků)
+✅ Odpovědi A-E: Max 1 věta (ideálně jen hesla, max 80 znaků každá)
+✅ Vysvětlení: Max 3 věty (max 200 znaků)
+
+❌ ŠPATNĚ: "Která z následujících strukturních komponent eukaryotické buňky je odpovědná za syntézu proteinů a jejich následnou posttranslační modifikaci?"
+✅ DOBŘE: "Která organel syntetizuje proteiny?"
+
+❌ ŠPATNĚ: "Ribozomy, které jsou přítomny v cytosolu a na endoplazmatickém retikulu"
+✅ DOBŘE: "Ribozomy"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎯 HIERARCHIE PRIORITY (NEJDŮLEŽITĚJŠÍ NAHOŘE):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. 🔴 KRITICKÉ: Respektuj SPECIFIKUM fakulty (multi-answer pro 2LF, option E pro MUNI)
-2. 🔴 KRITICKÉ: Pokud máš VZOROVÉ OTÁZKY, vytvoř otázky ve STEJNÉM STYLU
-3. 🔴 KRITICKÉ: Pokud máš PERSONALIZACI, zaměř se PŘESNĚ na slabé oblasti studenta
-4. 🟡 DŮLEŽITÉ: Použij odbornou terminologii a přesnost
-5. 🟡 DŮLEŽITÉ: Poskytni kvalitní vysvětlení správné odpovědi
+1. 🔴 KRITICKÉ: KRÁTKÉ texty (otázka max 150 znaků, odpovědi max 80 znaků)
+2. 🔴 KRITICKÉ: Respektuj SPECIFIKUM fakulty (multi-answer pro 2LF, option E pro MUNI)
+3. 🔴 KRITICKÉ: Pokud máš VZOROVÉ OTÁZKY, vytvoř otázky ve STEJNÉM STYLU
+4. 🔴 KRITICKÉ: Pokud máš PERSONALIZACI, zaměř se PŘESNĚ na slabé oblasti studenta
+5. 🟡 DŮLEŽITÉ: Použij odbornou terminologii a přesnost
+6. 🟡 DŮLEŽITÉ: Poskytni kvalitní vysvětlení správné odpovědi
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${is2LF ? `🔢 2. LF UK - KRITICKÉ UPOZORNĚNÍ:
@@ -502,9 +535,10 @@ ${is3LF ? `━━━ 3. LF UK REŽIM AKTIVOVÁN ━━━
 
 PRAVIDLA:
 ✅ Vracíš POUZE validní JSON (bez markdown, bez komentářů)
+✅ KRÁTKÉ texty - otázka max 150 znaků, odpovědi max 80 znaků každá!
 ✅ Otázky jsou ODBORNĚ PŘESNÉ a použitelné na skutečných přijímačkách
-✅ Pokud dostaneš VZOROVÉ otázky, vytvoříš nové VE STEJNÉM STYLU
-✅ Pokud dostaneš PERSONALIZACI pro studenta, zaměříš se PŘESNĚ na jeho slabé oblasti
+✅ Pokud dostaneš VZOROVÉ otázky z reálných testů, vytvoříš nové VE STEJNÉM STYLU
+✅ Pokud dostaneš ANALÝZU CHYBNÝCH ODPOVĚDÍ studenta, vytvoříš otázky testující PŘESNĚ ty koncepty
 ✅ Respektuješ SPECIFIKUM každé fakulty (multi-answer, option E) - viz výše`
               },
               {
