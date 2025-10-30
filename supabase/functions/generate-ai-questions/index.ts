@@ -175,63 +175,33 @@ Deno.serve(async (req) => {
 
     let personalizationContext = '';
     let weakAreaDetails = '';
+    let hasRelevantHistory = false;
+    
     if (personalizedForUser) {
       console.log('🎯 Building personalization context for user', user.id);
-      let statsQuery = supabase
-        .from('user_statistics')
-        .select('subject_id, category_id, accuracy_rate, total_questions_answered, subjects(name), categories(name)')
-        .eq('user_id', user.id);
-      if (subjectId) {
-        statsQuery = statsQuery.eq('subject_id', subjectId);
-      }
-      if (categoryId) {
-        statsQuery = statsQuery.eq('category_id', categoryId);
-      }
-      const { data: userStats } = await statsQuery
-        .order('accuracy_rate', {
-          ascending: true
-        })
-        .limit(20);
-      if (userStats && userStats.length > 0) {
-        const weakAreas = userStats
-          .filter((s: any) => s.accuracy_rate < 75 && s.total_questions_answered >= 2)
-          .map((s: any) => ({
-            subject: s.subjects?.name || 'Neznámý předmět',
-            category: s.categories?.name || 'Neznámá kategorie',
-            accuracy: Math.round(s.accuracy_rate),
-            subjectId: s.subject_id,
-            categoryId: s.category_id,
-            totalAnswered: s.total_questions_answered
-          }))
-          .slice(0, 8);
-        if (weakAreas.length > 0) {
-          weakAreaDetails = weakAreas
-            .map((wa: any) => `${wa.subject} - ${wa.category}: ${wa.accuracy}% (${wa.totalAnswered} otázek)`)
-            .join(', ');
-          personalizationContext = `\n\n🎯 KRITICKÁ PERSONALIZACE PRO UŽIVATELE:
-Student SKUTEČNĚ trpí v těchto oblastech: ${weakAreaDetails}
-
-⚠️ DŮLEŽITÉ: Vytvoř otázky PŘESNĚ z těchto slabých oblastí! Zaměř se na koncepty a témata, která student NEZVLÁDÁ.
-Otázky musí být NÁROČNÉ a testovat přesně ty věci, ve kterých student dělá chyby.`;
-        }
-      }
       let wrongAnswersQuery = supabase
         .from('user_answers')
         .select('question_id, is_correct, questions(id, question_text, option_a, option_b, option_c, option_d, option_e, correct_answers, explanation, subject_id, category_id, subjects(name), categories(name))')
         .eq('user_id', user.id)
         .eq('is_correct', false);
+      
+      // Filter by current filters (subject/category)
       if (subjectId) {
         wrongAnswersQuery = wrongAnswersQuery.eq('questions.subject_id', subjectId);
       }
       if (categoryId) {
         wrongAnswersQuery = wrongAnswersQuery.eq('questions.category_id', categoryId);
       }
+      
       const { data: wrongAnswers } = await wrongAnswersQuery
-        .order('created_at', {
-          ascending: false
-        })
+        .order('created_at', { ascending: false })
         .limit(50);
+      
+      // Check if we have relevant history for the current filters
       if (wrongAnswers && wrongAnswers.length > 0) {
+        hasRelevantHistory = true;
+        console.log(`✅ Found ${wrongAnswers.length} wrong answers for personalization`);
+        
         const errorPatterns = wrongAnswers
           .map((wa: any) => {
             const q = wa.questions;
@@ -250,6 +220,7 @@ Otázky musí být NÁROČNÉ a testovat přesně ty věci, ve kterých student 
             };
           })
           .filter(Boolean);
+        
         if (errorPatterns.length > 0) {
           const categoryCount = new Map();
           errorPatterns.forEach((p: any) => {
@@ -257,15 +228,14 @@ Otázky musí být NÁROČNÉ a testovat přesně ty věci, ve kterých student 
               categoryCount.set(p.category, (categoryCount.get(p.category) || 0) + 1);
             }
           });
+          
           const topErrorCategories = Array.from(categoryCount.entries())
             .sort((a: any, b: any) => b[1] - a[1])
-            .slice(0, 5)
+            .slice(0, 3)
             .map(([cat, cnt]) => `${cat} (${cnt}x)`);
-          if (topErrorCategories.length > 0) {
-            personalizationContext += `\n\n❌ TOP KATEGORIE S CHYBAMI: ${topErrorCategories.join(', ')}`;
-          }
-          const fullErrorExamples = errorPatterns
-            .slice(0, 8)
+          
+          const errorExamples = errorPatterns
+            .slice(0, 5)
             .map((p: any, i: number) => `\n━━━ CHYBNÁ OTÁZKA #${i + 1} ━━━
 ${p?.subject} → ${p?.category}
 Otázka: ${p?.text}
@@ -276,27 +246,27 @@ D) ${p?.optionD}${p?.optionE ? `\nE) ${p.optionE}` : ''}
 ✓ Správně: ${p?.correctAnswer}
 💡 ${p?.explanation || 'Bez vysvětlení'}`)
             .join('\n');
-          if (fullErrorExamples) {
-            personalizationContext += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 ANALÝZA CHYBNÝCH ODPOVĚDÍ STUDENTA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${fullErrorExamples}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 TVŮJ ÚKOL - PERSONALIZOVANÝ TEST:
+          
+          personalizationContext = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 ČÁSTEČNÁ PERSONALIZACE (volitelná inspirace)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Na základě těchto chybných odpovědí vytvoř otázky které:
+Student měl problémy v těchto kategoriích: ${topErrorCategories.join(', ')}
 
-✅ Testují PŘESNĚ ty koncepty kde student chyboval
-✅ Mají STEJNOU náročnost jako chybné otázky
-✅ Jsou formulované PODOBNÝM stylem
-✅ Zaměřují se na STEJNÁ témata a kategorie
-✅ Nutí studenta ZNOVU se zamyslet nad těmito koncepty
+Zde jsou příklady chybných odpovědí:${errorExamples}
 
-⚠️ KLÍČOVÉ: Student musí pochopit PROČ chyboval. Vytvoř otázky které testují jeho chápání základních principů v těchto problémových oblastech!`;
-          }
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 INSTRUKCE PRO PERSONALIZACI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Vytvoř RŮZNORODÉ otázky pokrývající CELOU kategorii
+✅ NĚKTERÉ otázky mohou testovat podobné koncepty jako chybné (30-40%)
+✅ VĚTŠINA otázek by měla být standardní pro danou kategorii (60-70%)
+⚠️ NEOMEZUJ se pouze na témata z chybných odpovědí!
+⚠️ Zachovej ŠIROKÝ ZÁBĚR celé kategorie!`;
         }
+      } else {
+        console.log(`ℹ️ No wrong answers found for current filters - using standard generation`);
       }
     }
 
@@ -432,31 +402,23 @@ Příklady:
 ${facultySpec}${physicsRequirement}${inspirationContext}${personalizationContext}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📏 FORMÁTOVACÍ POŽADAVKY (KRITICKÉ!):
+📏 FORMÁTOVACÍ POŽADAVKY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-⚠️ OTÁZKY A ODPOVĚDI MUSÍ BÝT KRÁTKÉ A STRUČNÉ!
-
-✅ Otázka: Max 2 věty (ideálně 1 věta, max 150 znaků)
-✅ Odpovědi A-E: Max 1 věta (ideálně jen hesla, max 80 znaků každá)
-✅ Vysvětlení: Max 3 věty (max 200 znaků)
-
-❌ ŠPATNĚ: "Která z následujících strukturních komponent eukaryotické buňky je odpovědná za syntézu proteinů a jejich následnou posttranslační modifikaci?"
-✅ DOBŘE: "Která organel syntetizuje proteiny?"
-
-❌ ŠPATNĚ: "Ribozomy, které jsou přítomny v cytosolu a na endoplazmatickém retikulu"
-✅ DOBŘE: "Ribozomy"
+✅ Otázky by měly být STRUČNÉ a JASNÉ
+✅ Vyhni se zbytečně dlouhým formulacím
+✅ Odpovědi by měly být KONKRÉTNÍ a KRÁTKÉ
+❌ Nepiš často dlouhé otázky s nadbytečnými detaily
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎯 HIERARCHIE PRIORITY (NEJDŮLEŽITĚJŠÍ NAHOŘE):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. 🔴 KRITICKÉ: KRÁTKÉ texty (otázka max 150 znaků, odpovědi max 80 znaků)
-2. 🔴 KRITICKÉ: Respektuj SPECIFIKUM fakulty (multi-answer pro 2LF, option E pro MUNI)
-3. 🔴 KRITICKÉ: Pokud máš VZOROVÉ OTÁZKY, vytvoř otázky ve STEJNÉM STYLU
-4. 🔴 KRITICKÉ: Pokud máš PERSONALIZACI, zaměř se PŘESNĚ na slabé oblasti studenta
-5. 🟡 DŮLEŽITÉ: Použij odbornou terminologii a přesnost
-6. 🟡 DŮLEŽITÉ: Poskytni kvalitní vysvětlení správné odpovědi
+1. 🔴 KRITICKÉ: Respektuj SPECIFIKUM fakulty (multi-answer pro 2LF, option E pro MUNI)
+2. 🔴 KRITICKÉ: Pokud máš VZOROVÉ OTÁZKY z reálných testů, vytvoř otázky ve STEJNÉM STYLU a STEJNÉ NÁROČNOSTI
+3. 🟡 DŮLEŽITÉ: Pokud je personalizace, využij ji ČÁSTEČNĚ (30-40% otázek), ale vytvoř RŮZNORODÝ test
+4. 🟡 DŮLEŽITÉ: Použij odbornou terminologii a přesnost
+5. 🟡 DŮLEŽITÉ: Poskytni kvalitní vysvětlení správné odpovědi
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${is2LF ? `🔢 2. LF UK - KRITICKÉ UPOZORNĚNÍ:
@@ -535,10 +497,11 @@ ${is3LF ? `━━━ 3. LF UK REŽIM AKTIVOVÁN ━━━
 
 PRAVIDLA:
 ✅ Vracíš POUZE validní JSON (bez markdown, bez komentářů)
-✅ KRÁTKÉ texty - otázka max 150 znaků, odpovědi max 80 znaků každá!
 ✅ Otázky jsou ODBORNĚ PŘESNÉ a použitelné na skutečných přijímačkách
-✅ Pokud dostaneš VZOROVÉ otázky z reálných testů, vytvoříš nové VE STEJNÉM STYLU
-✅ Pokud dostaneš ANALÝZU CHYBNÝCH ODPOVĚDÍ studenta, vytvoříš otázky testující PŘESNĚ ty koncepty
+✅ Otázky jsou STRUČNÉ, ale mohou být i delší pokud je to nutné
+✅ Pokud dostaneš VZOROVÉ otázky z reálných testů, vytvoříš nové VE STEJNÉM STYLU a STEJNÉ NÁROČNOSTI
+✅ Pokud dostaneš personalizaci, využiješ ji ČÁSTEČNĚ (30-40% otázek), zbytek bude standardní
+✅ Vytvoř RŮZNORODÝ test pokrývající CELOU kategorii
 ✅ Respektuješ SPECIFIKUM každé fakulty (multi-answer, option E) - viz výše`
               },
               {
@@ -657,8 +620,8 @@ PRAVIDLA:
       success: true,
       questions: insertedQuestions,
       count: insertedQuestions?.length || 0,
-      personalized: personalizedForUser,
-      weakAreas: weakAreaDetails || null
+      personalized: hasRelevantHistory,
+      weakAreas: hasRelevantHistory ? 'Částečná personalizace na základě chybných odpovědí' : null
     }), {
       status: 200,
       headers: {
