@@ -12,13 +12,14 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
 
 const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_KEY)
 
-interface DirectRequestBody {
+interface VerificationEmailRequest {
   email: string
-  name?: string
   redirectTo?: string
 }
 
 Deno.serve(async (req) => {
+  console.log('=== send-verification-email function called ===')
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -32,9 +33,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, name, redirectTo }: DirectRequestBody = await req.json()
+    const { email, redirectTo }: VerificationEmailRequest = await req.json()
+    console.log('Received request for email:', email)
 
     if (!email) {
+      console.error('Missing email in request')
       return new Response(JSON.stringify({ error: 'Missing email' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -42,10 +45,32 @@ Deno.serve(async (req) => {
     }
 
     const safeRedirect = redirectTo || `${SUPABASE_URL}/email-verified`
+    console.log('Redirect URL:', safeRedirect)
 
-    // Generate a magic link that will also verify the email upon click
+    // Get the user to generate a recovery/verification link
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.listUsers()
+    
+    if (userError) {
+      console.error('Error listing users:', userError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to find user' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      )
+    }
+
+    const user = userData.users.find(u => u.email === email)
+    
+    if (!user) {
+      console.error('User not found:', email)
+      return new Response(
+        JSON.stringify({ error: 'User not found' }),
+        { status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      )
+    }
+
+    // Generate recovery link which can be used for email verification
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
+      type: 'recovery',
       email,
       options: { redirectTo: safeRedirect },
     })
@@ -58,9 +83,10 @@ Deno.serve(async (req) => {
       )
     }
 
-    const actionLink = linkData.properties.action_link
+    const verificationLink = linkData.properties.action_link
+    console.log('Generated verification link')
 
-    // Generate HTML email
+    // Create HTML email
     const html = `
       <!DOCTYPE html>
       <html>
@@ -79,12 +105,12 @@ Deno.serve(async (req) => {
                         Vítejte v Budu Medik!
                       </h1>
                       <p style="color: #334155; font-size: 16px; line-height: 24px; margin: 16px 0;">
-                        Děkujeme za registraci. Pro dokončení nastavení účtu prosím ověřte svou e‑mailovou adresu.
+                        Děkujeme za registraci. Pro dokončení nastavení účtu prosím ověřte svou e‑mailovou adresu kliknutím na tlačítko níže.
                       </p>
                       <table width="100%" cellpadding="0" cellspacing="0" style="margin: 28px 0;">
                         <tr>
                           <td align="center">
-                            <a href="${actionLink}" target="_blank" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 10px; color: #ffffff; display: inline-block; font-size: 16px; font-weight: 700; padding: 14px 28px; text-decoration: none; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);">
+                            <a href="${verificationLink}" target="_blank" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border-radius: 10px; color: #ffffff; display: inline-block; font-size: 16px; font-weight: 700; padding: 14px 28px; text-decoration: none; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);">
                               Ověřit e‑mailovou adresu
                             </a>
                           </td>
@@ -107,7 +133,8 @@ Deno.serve(async (req) => {
       </html>
     `
 
-    const { error: sendError } = await resend.emails.send({
+    console.log('Sending email via Resend...')
+    const { data: emailData, error: sendError } = await resend.emails.send({
       from: 'Budu Medik <info@budumedik.cz>',
       to: [email],
       subject: 'Ověřte svůj e‑mail – Budu Medik',
@@ -115,14 +142,15 @@ Deno.serve(async (req) => {
     })
 
     if (sendError) {
-      console.error('Resend send error:', sendError)
+      console.error('Resend error:', sendError)
       return new Response(JSON.stringify({ error: sendError.message }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
+    console.log('✅ Email sent successfully via Resend:', emailData)
+    return new Response(JSON.stringify({ ok: true, emailId: emailData?.id }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
