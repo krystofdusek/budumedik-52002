@@ -11,7 +11,6 @@ import { CookieConsent } from "@/components/CookieConsent";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
-import EmailVerified from "./pages/EmailVerified";
 import Dashboard from "./pages/Dashboard";
 import TestGenerators from "./pages/dashboard/TestGenerators";
 import Progress from "./pages/dashboard/Progress";
@@ -48,7 +47,6 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/auth" element={<Auth />} />
-        <Route path="/email-verified" element={<EmailVerified />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/dashboard" element={<Dashboard />} />
