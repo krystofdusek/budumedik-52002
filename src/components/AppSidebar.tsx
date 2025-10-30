@@ -156,15 +156,14 @@ export function AppSidebar({ isAdmin: isAdminProp }: { isAdmin?: boolean } = {})
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <a 
-                      href="https://discord.gg/ZnvARNdzM6" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle className="mr-2 h-4 w-4" />
-                      <span>Discord Server</span>
-                    </a>
+                  <SidebarMenuButton
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open('https://discord.gg/ZnvARNdzM6', '_blank', 'noopener,noreferrer');
+                    }}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    <span>Discord Server</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
