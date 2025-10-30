@@ -17,12 +17,12 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!openaiKey) {
-      console.error('OPENAI_API_KEY is not set');
+    if (!lovableApiKey) {
+      console.error('LOVABLE_API_KEY is not set');
       return new Response(JSON.stringify({
-        error: 'OpenAI API key not configured'
+        error: 'Lovable AI API key not configured'
       }), {
         status: 500,
         headers: {
@@ -463,14 +463,14 @@ ${isBrno ? `✅ LF MUNI BRNO - KRITICKÉ UPOZORNĚNÍ:
 
 ${is2LF ? '⚠️ PŘIPOMENUTÍ 2LF: 30-40% otázek = POLE ["A","B"], zbytek = STRING "A"' : ''}
 ${isBrno ? '⚠️ PŘIPOMENUTÍ BRNO: VŽDY option_e, POUZE STRING "E" nebo "A" (NIKDY pole!)' : ''}`;
-        const generatePromise = fetch('https://api.openai.com/v1/chat/completions', {
+        const generatePromise = fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiKey}`
+            'Authorization': `Bearer ${lovableApiKey}`
           },
           body: JSON.stringify({
-            model: 'gpt-4o',
+            model: 'google/gemini-2.5-flash',
             messages: [
               {
                 role: 'system',
