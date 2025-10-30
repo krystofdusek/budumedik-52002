@@ -23,7 +23,7 @@ export const VerificationEmail = ({ name, action_link, token }: VerificationEmai
     <Preview>Ověřte svou e‑mailovou adresu</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Vítejte v Budu Medik{name ? `, ${name}` : ''}!</Heading>
+        <Heading style={h1}>Vítejte v Budu Medik!</Heading>
         <Text style={text}>
           Děkujeme za registraci. Pro dokončení nastavení účtu prosím ověřte svou e‑mailovou adresu.
         </Text>
@@ -33,13 +33,6 @@ export const VerificationEmail = ({ name, action_link, token }: VerificationEmai
             Ověřit e‑mailovou adresu
           </Link>
         </Section>
-
-        {token ? (
-          <>
-            <Text style={text}>Případně zadejte tento jednorázový kód:</Text>
-            <code style={code}>{token}</code>
-          </>
-        ) : null}
 
         <Text style={disclaimer}>
           Pokud jste se neregistrovali do Budu Medik, můžete tento e‑mail bezpečně ignorovat.
