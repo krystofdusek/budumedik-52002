@@ -53,22 +53,14 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
-          skipBrowserRedirect: true,
         },
       });
 
       if (error) throw error;
-
-      if (data?.url) {
-        // Open in new window to bypass iframe sandbox restrictions
-        window.open(data.url, '_blank');
-      } else {
-        throw new Error('Nepodařilo se získat URL pro přihlášení.');
-      }
     } catch (error: any) {
       toast({
         title: "Chyba při přihlášení",
