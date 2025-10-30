@@ -38,6 +38,8 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
 
+    const redirectTo = `${window.location.origin}/dashboard`;
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -45,6 +47,7 @@ export default function Auth() {
         data: {
           name: name,
         },
+        emailRedirectTo: redirectTo,
       },
     });
 
@@ -54,10 +57,28 @@ export default function Auth() {
         description: error.message,
         variant: "destructive",
       });
-    } else {
+      setIsLoading(false);
+      return;
+    }
+
+    // Send confirmation email
+    try {
+      const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
+        body: { email, password, redirectTo }
+      });
+
+      if (emailError) throw emailError;
+
       toast({
         title: "Registrace úspěšná",
-        description: "Můžete se nyní přihlásit.",
+        description: "Zkontrolujte prosím svůj e-mail a potvrďte registraci.",
+      });
+    } catch (emailError: any) {
+      console.error('Error sending confirmation email:', emailError);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se odeslat potvrzovací e-mail. Kontaktujte podporu.",
+        variant: "destructive",
       });
     }
 
